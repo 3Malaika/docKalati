@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>KALATI RAG — Manuel Utilisateur</title>
+<style>
+  :root { --red:#e63329; --dark:#1a2e4a; --light:#f8f9fa; --border:#dee2e6; --code:#2d2d2d; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Segoe UI',Arial,sans-serif; background:#fff; color:#222; line-height:1.7; }
+  header { background:var(--dark); color:#fff; padding:2rem 2.5rem; border-bottom:4px solid var(--red); }
+  header h1 { font-size:2rem; letter-spacing:1px; }
+  header p { opacity:.8; margin-top:.4rem; }
+  nav { background:#f1f3f5; border-bottom:1px solid var(--border); padding:.8rem 2.5rem; position:sticky; top:0; z-index:100; }
+  nav a { color:var(--dark); text-decoration:none; margin-right:1.5rem; font-size:.9rem; font-weight:600; }
+  nav a:hover { color:var(--red); }
+  main { max-width:1000px; margin:0 auto; padding:2rem 2.5rem; }
+  h2 { color:var(--dark); border-left:4px solid var(--red); padding-left:.8rem; margin:2.5rem 0 1rem; font-size:1.4rem; }
+  h3 { color:var(--dark); margin:1.5rem 0 .6rem; font-size:1.1rem; }
+  h4 { color:#555; margin:1rem 0 .4rem; font-size:1rem; }
+  p { margin-bottom:.8rem; }
+  ul,ol { margin:.5rem 0 1rem 1.5rem; }
+  li { margin-bottom:.4rem; }
+  code { background:#f0f0f0; border-radius:3px; padding:.1em .4em; font-size:.88em; font-family:'Courier New',monospace; }
+  .badge { display:inline-block; padding:.2em .7em; border-radius:20px; font-size:.78em; font-weight:700; margin:.1em; }
+  .badge-red { background:#fde8e8; color:var(--red); border:1px solid #f5c2c2; }
+  .badge-blue { background:#e8f0fe; color:#1a56db; border:1px solid #bfcefe; }
+  .badge-orange { background:#fff3e0; color:#b45309; border:1px solid #fdd89a; }
+  .card { background:var(--light); border:1px solid var(--border); border-radius:10px; padding:1.2rem 1.5rem; margin:1rem 0; }
+  .card-warn { background:#fff8e1; border-color:#fbc02d; }
+  .card-info { background:#e3f2fd; border-color:#1976d2; }
+  .card-success { background:#e8f5e9; border-color:#388e3c; }
+  .card-danger { background:#fce4ec; border-color:var(--red); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; }
+  table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:.9rem; }
+  th { background:var(--dark); color:#fff; padding:.6rem 1rem; text-align:left; }
+  td { padding:.6rem 1rem; border-bottom:1px solid var(--border); }
+  tr:nth-child(even) td { background:#f8f9fa; }
+  .step { display:flex; gap:1rem; margin:.8rem 0; }
+  .step-num { background:var(--red); color:#fff; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem; flex-shrink:0; margin-top:.15rem; }
+  .example-box { border:1px solid var(--border); border-radius:8px; padding:1rem 1.2rem; margin:.8rem 0; background:#fafbfc; }
+  .example-q { color:var(--dark); font-weight:700; }
+  .example-good { border-left:4px solid #388e3c; }
+  .example-bad { border-left:4px solid var(--red); }
+  footer { background:var(--dark); color:#aaa; text-align:center; padding:1.5rem; margin-top:3rem; font-size:.85rem; }
+  @media(max-width:700px){ .grid2,.grid3{grid-template-columns:1fr;} nav a{display:block;margin:.3rem 0;} }
+</style>
+</head>
+<body>
+<header>
+  <h1>🚂 KALATI — Guide de l'utilisateur</h1>
+  <p>Votre assistant pour retrouver rapidement une information dans les documents CAMRAIL</p>
+</header>
+<nav>
+  <a href="#bienvenue">Bienvenue</a>
+  <a href="#connexion">Se connecter</a>
+  <a href="#poser-question">Poser une question</a>
+  <a href="#comprendre-reponse">Comprendre la réponse</a>
+  <a href="#vocal">Utiliser le micro</a>
+  <a href="#limites">Ce que KALATI ne fait pas</a>
+  <a href="#faq">Questions fréquentes</a>
+</nav>
+<main>
+
+<section id="bienvenue">
+<h2>👋 Bienvenue sur KALATI</h2>
+<p>KALATI est un outil qui vous permet de poser une question en langage courant — comme vous le feriez à un collègue — et de recevoir une réponse basée sur les vrais documents normatifs de CAMRAIL (Convention Collective, Instructions Générales de Sécurité, modes opératoires, etc.).</p>
+
+<div class="grid3">
+  <div class="card">
+    <h4>🔍 Vous cherchez une info</h4>
+    <p>Plutôt que de parcourir des dizaines de pages de documents, posez directement votre question.</p>
+  </div>
+  <div class="card">
+    <h4>📄 Réponse sourcée</h4>
+    <p>Chaque réponse indique le document exact dont elle provient — vous pouvez toujours vérifier.</p>
+  </div>
+  <div class="card">
+    <h4>🎤 Texte ou voix</h4>
+    <p>Tapez votre question ou utilisez le micro, selon ce qui vous convient le mieux.</p>
+  </div>
+</div>
+
+<div class="card card-info">
+  <strong>💡 En résumé</strong> — KALATI ne "sait" que ce qui est écrit dans les documents auxquels vous avez accès. Il ne devine pas, il cherche dans les textes officiels et reformule ce qu'il y trouve.
+</div>
+</section>
+
+<section id="connexion">
+<h2>🔑 Se connecter</h2>
+<div class="step"><div class="step-num">1</div><div>Ouvrez KALATI depuis votre ordinateur, tablette ou téléphone (adresse fournie par votre service informatique).</div></div>
+<div class="step"><div class="step-num">2</div><div>Saisissez l'identifiant et le mot de passe qui vous ont été communiqués.</div></div>
+<div class="step"><div class="step-num">3</div><div>Lors de votre toute première connexion, il est recommandé de changer votre mot de passe temporaire (menu de votre profil).</div></div>
+
+<div class="card card-warn">
+  <strong>⚠️ Vous ne parvenez pas à vous connecter ?</strong> Après plusieurs essais infructueux, l'accès est temporairement bloqué quelques minutes par mesure de sécurité. Si le problème persiste, contactez la Coordination Informatique.
+</div>
+
+<h3>Votre accès dépend de votre poste</h3>
+<p>Vous ne voyez que les documents liés à votre fonction (RH, Sécurité, Maintenance, Transport, Direction...). C'est normal et volontaire — cela protège les informations sensibles de chaque service. Si un document qui vous semble utile n'apparaît pas dans vos réponses, contactez la Coordination Informatique pour vérifier vos droits d'accès.</p>
+</section>
+
+<section id="poser-question">
+<h2>💬 Poser une question efficacement</h2>
+<p>KALATI comprend le langage naturel, mais certaines formulations donnent de meilleurs résultats que d'autres.</p>
+
+<div class="grid2">
+  <div class="example-box example-good">
+    <p class="example-q">✅ "Que dit la Convention Collective en matière de retraite ?"</p>
+    <p>Précise, complète, une seule question.</p>
+  </div>
+  <div class="example-box example-bad">
+    <p class="example-q">❌ "Parle-moi du travail"</p>
+    <p>Trop vague — KALATI ne saura pas quel document chercher.</p>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="example-box example-good">
+    <p class="example-q">✅ "Que prévoient les IGS sur la Marche à Vue ?"</p>
+    <p>Utilise le vocabulaire métier habituel — KALATI le reconnaît.</p>
+  </div>
+  <div class="example-box example-bad">
+    <p class="example-q">❌ "C'est quoi la procédure et aussi les horaires et le contact RH ?"</p>
+    <p>Plusieurs questions mélangées — posez-les une par une.</p>
+  </div>
+</div>
+
+<h3>Quelques exemples de questions selon votre métier</h3>
+<table>
+  <tr><th>Situation</th><th>Exemple de question</th></tr>
+  <tr><td>Agent de gare / Sécurité</td><td>"Que prévoient les IGS sur la Marche à Vue ?"</td></tr>
+  <tr><td>Maintenance ferroviaire</td><td>"Comment révise-t-on un roulement de boîtes d'essieux ?"</td></tr>
+  <tr><td>Exploitation / Transport</td><td>"Comment expédier un train dans une gare ?"</td></tr>
+  <tr><td>Tout agent</td><td>"Que dit la Convention Collective en matière de congés ?"</td></tr>
+</table>
+</section>
+
+<section id="comprendre-reponse">
+<h2>📖 Comprendre et vérifier une réponse</h2>
+<p>Chaque réponse de KALATI s'accompagne d'une ou plusieurs <strong>sources</strong> : le nom du document exact dans lequel l'information a été trouvée.</p>
+
+<div class="card">
+  <h4>Exemple de réponse</h4>
+  <p><em>"La Convention Collective prévoit que... [réponse détaillée]"</em></p>
+  <p style="margin-top:.6rem;"><strong>Sources :</strong> <span class="badge badge-blue">Convention_Collective_CAMRAIL.pdf</span></p>
+</div>
+
+<div class="card card-danger">
+  <strong>🚫 Règle essentielle, en particulier pour les sujets de sécurité</strong><br/>
+  Ne prenez jamais une décision importante — surtout liée à la sécurité des personnes et des circulations (Marche à Vue, consignes de gare, etc.) — sur la seule base de la réponse de KALATI. Ouvrez toujours le document source cité pour confirmer avant d'agir. KALATI est une aide à la recherche, pas une autorité qui remplace le document officiel.
+</div>
+
+<h3>Si la réponse ne vous semble pas correcte</h3>
+<ol>
+  <li>Reformulez votre question différemment, avec d'autres mots</li>
+  <li>Vérifiez directement le document source cité</li>
+  <li>Si le problème persiste, signalez-le à votre formateur ou à la Coordination Informatique</li>
+</ol>
+
+<h3>Si KALATI répond "je ne trouve aucun document pertinent"</h3>
+<p>Cela signifie qu'aucun document auquel vous avez accès ne contient l'information demandée. Cela peut vouloir dire :</p>
+<ul>
+  <li>Le document existe mais n'est pas encore intégré à KALATI</li>
+  <li>Le document existe mais n'est pas accessible à votre service (voir la Coordination Informatique)</li>
+  <li>La question sort du périmètre des textes normatifs CAMRAIL</li>
+</ul>
+</section>
+
+<section id="vocal">
+<h2>🎤 Utiliser le micro</h2>
+<p>Si votre poste le permet, vous pouvez poser votre question à l'oral plutôt qu'au clavier.</p>
+<div class="step"><div class="step-num">1</div><div>Appuyez sur l'icône micro et parlez clairement votre question.</div></div>
+<div class="step"><div class="step-num">2</div><div>Relâchez ou appuyez à nouveau pour arrêter l'enregistrement.</div></div>
+<div class="step"><div class="step-num">3</div><div>KALATI transcrit votre question, cherche la réponse, et peut vous la lire à voix haute.</div></div>
+
+<div class="card card-info">
+  <strong>💡 Conseil pour une bonne transcription</strong> — Utilisez de préférence un casque ou des écouteurs avec micro intégré plutôt que le micro de l'ordinateur : la qualité de la transcription en dépend fortement, surtout dans un environnement bruyant (gare, atelier).
+</div>
+</section>
+
+<section id="limites">
+<h2>🚫 Ce que KALATI ne fait pas</h2>
+<ul>
+  <li><strong>Ce n'est pas un moteur de recherche internet</strong> — il ne répond qu'à partir des documents CAMRAIL indexés, jamais avec des informations extérieures.</li>
+  <li><strong>Ce n'est pas un outil de décision</strong> — il vous aide à retrouver une information, il ne se substitue pas à un responsable ou à une procédure de validation.</li>
+  <li><strong>Il peut se tromper</strong> — comme tout système automatisé, vérifiez toujours une réponse importante via le document source.</li>
+  <li><strong>Il ne connaît que ce qui est indexé</strong> — un document tout juste ajouté peut prendre quelques minutes avant d'être pris en compte.</li>
+</ul>
+
+<div class="card card-warn">
+  <strong>⚠️ Confidentialité</strong> — Vos questions et les réponses obtenues sont enregistrées dans un journal à des fins de contrôle et de conformité réglementaire. Utilisez KALATI dans le cadre de votre activité professionnelle.
+</div>
+</section>
+
+<section id="faq">
+<h2>❓ Questions fréquentes</h2>
+
+<h3>Je ne vois pas un document que je sais exister, pourquoi ?</h3>
+<p>Votre accès dépend de votre service. Contactez la Coordination Informatique si vous pensez avoir besoin d'un accès supplémentaire.</p>
+
+<h3>Puis-je poser des questions personnelles ou hors travail ?</h3>
+<p>Non, KALATI est un outil professionnel dédié à la recherche dans les textes normatifs CAMRAIL.</p>
+
+<h3>Que faire si le système ne répond pas ou est très lent ?</h3>
+<p>Réessayez dans quelques instants. Si le problème persiste, contactez la Coordination Informatique. En cas d'urgence, référez-vous toujours aux documents papier/officiels.</p>
+
+<h3>Puis-je faire confiance à 100 % à une réponse ?</h3>
+<p>Non — vérifiez toujours la source citée, en particulier pour tout sujet lié à la sécurité ou à la réglementation.</p>
+
+<h3>Qui contacter en cas de problème ?</h3>
+<p>Votre formateur pour les questions d'usage, la Coordination Informatique pour les problèmes de compte ou d'accès.</p>
+</section>
+
+</main>
+<footer>
+  <p>KALATI — Guide de l'utilisateur · CAMRAIL</p>
+</footer>
+</body>
+</html>

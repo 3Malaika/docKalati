@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>KALATI RAG — Guide technique complet</title>
+<style>
+  :root { --red:#e63329; --red-dark:#c41f15; --light:#f4f6f9; --border:#d1d9e0; --code:#1e1e1e; --text:#0f1923; --muted:#6b7a8d; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Segoe UI',Arial,sans-serif; background:#fff; color:var(--text); line-height:1.7; }
+  /* ── Header ── */
+  header { background:linear-gradient(135deg, var(--red) 0%, var(--red-dark) 100%); color:#fff; padding:1.6rem 2.5rem; border-bottom:4px solid var(--red-dark); }
+  .header-inner { display:flex; align-items:center; gap:1.2rem; max-width:1100px; margin:0 auto; }
+  .header-logo { width:56px; height:56px; object-fit:contain; background:#fff; border-radius:10px; padding:4px; flex-shrink:0; }
+  header h1 { font-size:1.8rem; letter-spacing:.5px; }
+  header p { opacity:.85; margin-top:.3rem; font-size:.95rem; }
+  /* ── Nav ── */
+  nav { background:#fff; border-bottom:2px solid var(--border); padding:.7rem 2.5rem; position:sticky; top:0; z-index:100; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  nav a { color:var(--text); text-decoration:none; margin-right:1.5rem; font-size:.88rem; font-weight:600; }
+  nav a:hover { color:var(--red); }
+  /* ── Layout ── */
+  main { max-width:1100px; margin:0 auto; padding:2rem 2.5rem; }
+  /* ── Section icons ── */
+  h2 { color:var(--text); border-left:4px solid var(--red); padding-left:.8rem; margin:2.5rem 0 1rem; font-size:1.35rem; display:flex; align-items:center; gap:.55rem; }
+  h2 svg { color:var(--red); flex-shrink:0; }
+  h3 { color:var(--text); margin:1.5rem 0 .6rem; font-size:1.05rem; font-weight:700; }
+  h4 { color:var(--muted); margin:1rem 0 .4rem; font-size:.98rem; font-weight:600; }
+  p { margin-bottom:.8rem; }
+  ul,ol { margin:.5rem 0 1rem 1.5rem; }
+  li { margin-bottom:.3rem; }
+  code { background:#f0f0f0; border-radius:3px; padding:.1em .4em; font-size:.88em; font-family:'Courier New',monospace; color:var(--red-dark); }
+  pre { background:var(--code); color:#f8f8f2; border-radius:8px; padding:1.2rem; overflow-x:auto; margin:1rem 0; font-size:.88em; line-height:1.6; }
+  pre code { background:none; color:inherit; padding:0; }
+  /* ── Badges ── */
+  .badge { display:inline-block; padding:.2em .7em; border-radius:20px; font-size:.78em; font-weight:700; margin:.1em; }
+  .badge-red    { background:#fde8e8; color:var(--red);    border:1px solid #f5c2c2; }
+  .badge-blue   { background:#e8f0fe; color:#1a56db;       border:1px solid #bfcefe; }
+  .badge-green  { background:#e8f8ee; color:#0a7a3e;       border:1px solid #b3e6c8; }
+  .badge-orange { background:#fff3e0; color:#b45309;       border:1px solid #fdd89a; }
+  .badge-purple { background:#f3e8ff; color:#6b21a8;       border:1px solid #d8b4fe; }
+  /* ── Cards ── */
+  .card { background:var(--light); border:1px solid var(--border); border-radius:10px; padding:1.2rem 1.5rem; margin:1rem 0; }
+  .card-warn    { background:#fff8e1; border-color:#fbc02d; }
+  .card-info    { background:#f4f6f9; border-color:var(--border); }
+  .card-success { background:#e8f5e9; border-color:#388e3c; }
+  .card-danger  { background:#fce4ec; border-color:var(--red); }
+  /* ── Grid ── */
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; }
+  /* ── Tables ── */
+  table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:.9rem; }
+  th { background:var(--red); color:#fff; padding:.65rem 1rem; text-align:left; font-weight:700; }
+  th:first-child { border-radius:4px 0 0 4px; }
+  th:last-child  { border-radius:0 4px 4px 0; }
+  td { padding:.6rem 1rem; border-bottom:1px solid var(--border); }
+  tr:nth-child(even) td { background:var(--light); }
+  /* ── Tabs ── */
+  .tab { display:none; } .tab.active { display:block; }
+  .tabs { display:flex; gap:.5rem; margin-bottom:1rem; flex-wrap:wrap; }
+  .tab-btn { padding:.45rem 1.1rem; border:2px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:600; font-size:.88rem; color:var(--text); transition:all .15s; }
+  .tab-btn:hover { border-color:var(--red); color:var(--red); }
+  .tab-btn.active { background:var(--red); color:#fff; border-color:var(--red); }
+  /* ── Steps ── */
+  .step { display:flex; gap:1rem; margin:.8rem 0; }
+  .step-num { background:var(--red); color:#fff; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem; flex-shrink:0; margin-top:.15rem; }
+  /* ── Footer ── */
+  footer { background:var(--red-dark); color:rgba(255,255,255,.7); text-align:center; padding:1.5rem; margin-top:3rem; font-size:.85rem; }
+  /* ── Arch diagram ── */
+  .arch-box { border:2px solid var(--border); border-radius:8px; padding:1rem; text-align:center; font-size:.85rem; background:#fff; }
+  .arch-arrow { text-align:center; color:var(--red); font-size:1.4rem; line-height:1; }
+  /* ── Responsive ── */
+  @media(max-width:700px){ .grid2,.grid3{grid-template-columns:1fr;} nav a{display:block;margin:.3rem 0;} .header-inner{flex-direction:column;align-items:flex-start;} }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <img src="frontend/public/assets/images/camrail-removebg-preview-1786060006378.png" alt="Logo CAMRAIL" class="header-logo"/>
+    <div>
+      <h1>KALATI RAG — Guide Technique Complet</h1>
+      <p>Portail de Recherche Documentaire Augmentée · CAMRAIL · Documentation d'installation et d'utilisation</p>
+    </div>
+  </div>
+</header>
+<nav>
+  <a href="#apercu">Aperçu</a>
+  <a href="#architecture">Architecture</a>
+  <a href="#acces">Accès</a>
+  <a href="#local">Installation locale</a>
+  <a href="#ollama">Ollama & modèles</a>
+  <a href="#materiel">Matériel requis</a>
+  <a href="#cloud">Mode Cloud</a>
+  <a href="#api">API Reference</a>
+</nav>
+<main>
+
+<!-- APERÇU -->
+<section id="apercu">
+<h2><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Aperçu du système</h2>
+<p>KALATI RAG est une application web full-stack qui permet aux agents CAMRAIL d'interroger en langage naturel une base documentaire interne (PDF, DOCX, TXT). Le système utilise la technique <strong>RAG (Retrieval-Augmented Generation)</strong> : il recherche les passages pertinents dans les documents puis génère une réponse précise via un LLM.</p>
+
+<div class="grid3">
+  <div class="card">
+    <h4>Frontend</h4>
+    <p>Next.js 15 + React 19 + Tailwind CSS. Interface chat, dashboard admin, gestion vocale.</p>
+  </div>
+  <div class="card">
+    <h4>Backend</h4>
+    <p>FastAPI (Python 3.11). API REST sécurisée JWT, pipeline RAG hybride, multimodalité PDF.</p>
+  </div>
+  <div class="card">
+    <h4>Données</h4>
+    <p>ChromaDB (vecteurs), SQLite (audit + utilisateurs), fichiers JSON (manifeste d'accès).</p>
+  </div>
+</div>
+
+<h3>Fonctionnalités principales</h3>
+<ul>
+  <li><strong>Recherche hybride</strong> : sémantique (vecteurs) + lexicale (BM25) fusionnées</li>
+  <li><strong>Contrôle d'accès par groupe</strong> : chaque document est associé à un ou plusieurs groupes</li>
+  <li><strong>Interface vocale</strong> : transcription Whisper → RAG → réponse audio (Piper TTS) — sur ordinateur, utiliser un casque avec microphone pour une transcription optimale</li>
+  <li><strong>Multimodalité</strong> : tableaux et images des PDF extraits et indexés</li>
+  <li><strong>Gestion des utilisateurs</strong> : CRUD complet depuis le dashboard admin</li>
+  <li><strong>Journal d'audit</strong> : toutes les questions sont tracées dans SQLite</li>
+</ul>
+</section>
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+<h2><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M5 20V8l7-6 7 6v12"/><path d="M9 20v-5h6v5"/></svg>Architecture</h2>
+<div class="grid2" style="align-items:start">
+  <div>
+    <h3>Flux d'une requête texte</h3>
+    <div class="card" style="font-size:.85rem;">
+      <div class="arch-box">Utilisateur tape une question</div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-box">Frontend → <code>POST /api/query</code></div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-box">Authentification JWT + vérification groupe</div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-box"><strong>Embeddings</strong> : Cohere API → vecteur requête</div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-box"><strong>Recherche hybride</strong> : ChromaDB (sémantique) + BM25 (lexical)</div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-box"><strong>LLM</strong> : Groq llama-3.3-70b → génère la réponse</div>
+      <div class="arch-arrow">↓</div>
+      <div class="arch-box">Réponse + sources retournées au frontend + audit SQLite</div>
+    </div>
+  </div>
+  <div>
+    <h3>Structure des fichiers clés</h3>
+    <pre><code>kalati-rag/
+├── backend/
+│   ├── app/
+│   │   ├── main.py              # Point d'entrée FastAPI
+│   │   ├── config.py            # Toutes les variables d'env
+│   │   ├── api/routes/
+│   │   │   ├── auth.py          # Login / JWT
+│   │   │   ├── query.py         # Pipeline RAG
+│   │   │   ├── admin.py         # Ingestion + audit
+│   │   │   ├── upload.py        # Upload documents
+│   │   │   ├── users.py         # Gestion utilisateurs
+│   │   │   └── voice.py         # Transcription + TTS
+│   │   ├── domain/
+│   │   │   ├── auth.py          # Logique JWT + bcrypt
+│   │   │   ├── rag.py           # Orchestrateur RAG
+│   │   │   └── retrieval.py     # Recherche hybride
+│   │   └── infrastructure/
+│   │       ├── embeddings.py    # Cohere API
+│   │       ├── llm_client.py    # Groq LLM
+│   │       ├── vision_client.py # Groq Vision
+│   │       ├── voice_client.py  # Whisper + Piper
+│   │       ├── vector_store.py  # ChromaDB
+│   │       ├── user_repository.py # SQLite users
+│   │       └── audit_repository.py # SQLite audit
+├── frontend/src/
+│   ├── app/
+│   │   ├── login/               # Page connexion
+│   │   ├── chat-documentaire/   # Interface chat
+│   │   └── admin-dashboard/     # Dashboard admin
+│   └── lib/api.ts               # Client HTTP (équiv. client.ts)
+└── data/
+    ├── users.json               # Seed utilisateurs
+    ├── access_manifest.json     # Droits par document
+    └── documents/               # PDF/DOCX/TXT à indexer</code></pre>
+  </div>
+</div>
+</section>
+
+<!-- ACCÈS -->
+<section id="acces">
+<h2><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Accès et groupes utilisateurs</h2>
+<div class="card card-info">
+  <strong>Comptes de démonstration</strong> — Mot de passe par défaut pour tous les agents de test : <code>camrail123</code>
+</div>
+
+<table>
+  <tr><th>Identifiant</th><th>Rôle</th><th>Groupes</th><th>Accès</th></tr>
+  <tr>
+    <td><code>admin</code></td>
+    <td>Administrateur CI</td>
+    <td><span class="badge badge-red">admin</span><span class="badge badge-blue">tous</span></td>
+    <td>Accès total : documents, utilisateurs, audit, upload, dashboard</td>
+  </tr>
+  <tr>
+    <td><code>agent.rh</code></td>
+    <td>Agent RH Test</td>
+    <td><span class="badge badge-blue">rh</span></td>
+    <td>Documents RH uniquement (contrats, convention collective, etc.)</td>
+  </tr>
+  <tr>
+    <td><code>agent.securite</code></td>
+    <td>Agent Sécurité Gare</td>
+    <td><span class="badge badge-orange">securite</span></td>
+    <td>Documents sécurité (IGS, procédures gare, etc.)</td>
+  </tr>
+  <tr>
+    <td><code>agent.maintenance</code></td>
+    <td>Agent Maintenance</td>
+    <td><span class="badge badge-green">maintenance</span></td>
+    <td>Documents maintenance (modes opératoires voie, etc.)</td>
+  </tr>
+</table>
+
+<h3>Groupes disponibles</h3>
+<p>
+  <span class="badge badge-red">admin</span>
+  <span class="badge badge-blue">rh</span>
+  <span class="badge badge-orange">securite</span>
+  <span class="badge badge-green">maintenance</span>
+  <span class="badge badge-purple">transport</span>
+  <span class="badge" style="background:#fce4ec;color:#880e4f;border:1px solid #f8bbd0;">direction</span>
+</p>
+<p>Un document peut être accessible par plusieurs groupes. Un document absent du manifeste est restreint au groupe <code>admin</code> par défaut (fail-safe).</p>
+
+<h3>URLs d'accès</h3>
+<table>
+  <tr><th>Page</th><th>URL locale</th><th>URL Render</th></tr>
+  <tr><td>Connexion</td><td><code>http://localhost:4028/login</code></td><td><code>https://kalati.onrender.com/login</code></td></tr>
+  <tr><td>Chat documentaire</td><td><code>http://localhost:4028/chat-documentaire</code></td><td><code>https://kalati.onrender.com/chat-documentaire</code></td></tr>
+  <tr><td>Dashboard admin</td><td><code>http://localhost:4028/admin-dashboard</code></td><td><code>https://kalati.onrender.com/admin-dashboard</code></td></tr>
+  <tr><td>API docs (Swagger)</td><td><code>http://localhost:8000/docs</code></td><td>Non exposé en prod</td></tr>
+  <tr><td>Health check</td><td><code>http://localhost:8000/health</code></td><td><code>https://kalatibackend.onrender.com/health</code></td></tr>
+</table>
+</section>
+
+<!-- INSTALLATION LOCALE -->
+<section id="local">
+<h2><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="M3 9h6"/><path d="M3 15h6"/></svg>Installation locale complète</h2>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('win')">Windows</button>
+  <button class="tab-btn" onclick="showTab('linux')">Linux / macOS</button>
+</div>
+
+<div id="win" class="tab active">
+<h3>Prérequis Windows</h3>
+<ul>
+  <li>Python 3.11+ (<a href="https://python.org">python.org</a>)</li>
+  <li>Node.js 20+ (<a href="https://nodejs.org">nodejs.org</a>)</li>
+  <li>Git (<a href="https://git-scm.com">git-scm.com</a>)</li>
+  <li>ffmpeg (optionnel, améliore la transcription vocale) : <a href="https://ffmpeg.org/download.html">ffmpeg.org</a></li>
+</ul>
+
+<h3>Étapes d'installation</h3>
+<div class="step"><div class="step-num">1</div><div><strong>Cloner le repo</strong><pre><code>git clone https://github.com/votre-repo/kalati-rag.git
+cd kalati-rag</code></pre></div></div>
+
+<div class="step"><div class="step-num">2</div><div><strong>Installer le backend</strong><pre><code>cd backend
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt</code></pre></div></div>
+
+<div class="step"><div class="step-num">3</div><div><strong>Configurer le backend (.env)</strong><pre><code>copy .env.example .env
+# Éditer .env avec Notepad ou VS Code</code></pre>
+<p>Contenu minimal du <code>.env</code> :</p>
+<pre><code>GROQ_API_KEY=votre_cle_groq
+COHERE_API_KEY=votre_cle_cohere
+JWT_SECRET_KEY=une-cle-aleatoire-longue
+LLM_MODEL=llama-3.3-70b-versatile
+EMBEDDING_MODEL=embed-multilingual-v3.0</code></pre>
+<div class="card card-info">Pour utiliser Ollama en local : voir section <a href="#ollama">Ollama & modèles</a> ci-dessous.</div>
+</div></div>
+
+<div class="step"><div class="step-num">4</div><div><strong>Démarrer le backend</strong><pre><code>cd backend
+venv\Scripts\activate
+uvicorn app.main:app --reload --port 8000</code></pre></div></div>
+
+<div class="step"><div class="step-num">5</div><div><strong>Installer le frontend</strong><pre><code>cd frontend
+npm install</code></pre></div></div>
+
+<div class="step"><div class="step-num">6</div><div><strong>Configurer le frontend (.env)</strong><pre><code>copy .env.example .env
+# Éditer .env :</code></pre>
+<pre><code>NEXT_PUBLIC_API_BASE_URL=http://localhost:8000</code></pre></div></div>
+
+<div class="step"><div class="step-num">7</div><div><strong>Démarrer le frontend</strong><pre><code>npm run dev</code></pre>
+<p>Ouvrir <code>http://localhost:4028</code></p></div></div>
+</div>
+
+<div id="linux" class="tab">
+<h3>Prérequis Linux / macOS</h3>
+<pre><code># Ubuntu / Debian
+sudo apt update && sudo apt install -y python3.11 python3.11-venv nodejs npm git ffmpeg
+
+# macOS (Homebrew)
+brew install python@3.11 node git ffmpeg</code></pre>
+
+<h3>Étapes d'installation</h3>
+<div class="step"><div class="step-num">1</div><div><strong>Cloner le repo</strong><pre><code>git clone https://github.com/votre-repo/kalati-rag.git
+cd kalati-rag</code></pre></div></div>
+
+<div class="step"><div class="step-num">2</div><div><strong>Installer le backend</strong><pre><code>cd backend
+python3.11 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt</code></pre></div></div>
+
+<div class="step"><div class="step-num">3</div><div><strong>Configurer le backend</strong><pre><code>cp .env.example .env
+nano .env  # ou vim .env</code></pre>
+<pre><code>GROQ_API_KEY=votre_cle_groq
+COHERE_API_KEY=votre_cle_cohere
+JWT_SECRET_KEY=une-cle-aleatoire-longue</code></pre></div></div>
+
+<div class="step"><div class="step-num">4</div><div><strong>Démarrer le backend</strong><pre><code>source venv/bin/activate
+uvicorn app.main:app --reload --port 8000</code></pre></div></div>
+
+<div class="step"><div class="step-num">5</div><div><strong>Frontend</strong><pre><code>cd ../frontend
+npm install
+echo "NEXT_PUBLIC_API_BASE_URL=http://localhost:8000" > .env
+npm run dev</code></pre></div></div>
+</div>
+
+<div class="step"><div class="step-num">8</div><div><strong>Indexer les documents</strong>
+<p>Connectez-vous en tant qu'<code>admin</code>, allez dans Dashboard → Documents → <em>Uploader un document</em> ou cliquez sur <em>Ré-ingérer tout</em> si des documents sont déjà dans <code>data/documents/</code>.</p>
+</div></div>
+</section>
+
+<!-- OLLAMA -->
+<section id="ollama">
+<h2><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Mode 100% local avec Ollama</h2>
+<div class="card card-success">
+  <strong>Aucune clé API requise</strong> — En mode Ollama, tout fonctionne hors-ligne. Les modèles tournent sur votre machine.
+</div>
+
+<h3>Installation d'Ollama</h3>
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('ol-win')">Windows</button>
+  <button class="tab-btn" onclick="showTab('ol-linux')">Linux</button>
+  <button class="tab-btn" onclick="showTab('ol-mac')">macOS</button>
+</div>
+
+<div id="ol-win" class="tab active">
+<div class="step"><div class="step-num">1</div><div>
+  <strong>Télécharger et installer Ollama</strong><br/>
+  Aller sur <a href="https://ollama.com/download">ollama.com/download</a> → télécharger le <code>.exe</code> Windows → l'installer.
+</div></div>
+<div class="step"><div class="step-num">2</div><div>
+  <strong>Vérifier l'installation</strong>
+  <pre><code>ollama --version</code></pre>
+</div></div>
+<div class="step"><div class="step-num">3</div><div>
+  <strong>Démarrer le serveur Ollama</strong>
+  <pre><code>ollama serve</code></pre>
+  <p>Laisser ce terminal ouvert. Ollama écoute sur <code>http://localhost:11434</code></p>
+</div></div>
+<div class="step"><div class="step-num">4</div><div>
+  <strong>Télécharger les modèles</strong>
+  <pre><code># LLM principal (recommandé — ~4.1 Go)
+ollama pull mistral
+
+# Alternative plus légère (~2.3 Go)
+ollama pull llama3.2:3b
+
+# Pour la vision/multimodalité (~1.7 Go)
+ollama pull moondream
+
+# Embeddings (obligatoire pour la recherche sémantique)
+ollama pull nomic-embed-text</code></pre>
+</div></div>
+</div>
+
+<div id="ol-linux" class="tab">
+<div class="step"><div class="step-num">1</div><div>
+  <strong>Installer Ollama</strong>
+  <pre><code>curl -fsSL https://ollama.com/install.sh | sh</code></pre>
+</div></div>
+<div class="step"><div class="step-num">2</div><div>
+  <strong>Activer le service (systemd)</strong>
+  <pre><code>sudo systemctl enable ollama
+sudo systemctl start ollama</code></pre>
+</div></div>
+<div class="step"><div class="step-num">3</div><div>
+  <strong>Télécharger les modèles</strong>
+  <pre><code>ollama pull mistral
+ollama pull moondream
+ollama pull nomic-embed-text</code></pre>
+</div></div>
+</div>
+
+<div id="ol-mac" class="tab">
+<div class="step"><div class="step-num">1</div><div>
+  <strong>Installer via Homebrew ou .dmg</strong>
+  <pre><code>brew install ollama
+# ou télécharger depuis https://ollama.com/download</code></pre>
+</div></div>
+<div class="step"><div class="step-num">2</div><div>
+  <strong>Démarrer</strong>
+  <pre><code>ollama serve &
+ollama pull mistral
+ollama pull nomic-embed-text</code></pre>
+</div></div>
+</div>
+
+<h3>Adapter KALATI pour utiliser Ollama</h3>
+<p>Modifier le fichier <code>backend/.env</code> :</p>
+<pre><code># LLM local via Ollama
+LLM_MODEL=mistral
+OLLAMA_BASE_URL=http://localhost:11434
+
+# Embeddings locaux (remplace Cohere)
+EMBEDDING_MODEL=nomic-embed-text
+
+# Laisser vides (plus besoin de clés API externes)
+GROQ_API_KEY=
+COHERE_API_KEY=</code></pre>
+
+<h3>Modifier le code pour Ollama</h3>
+<p>Le fichier <code>backend/app/infrastructure/llm_client.py</code> doit être adapté :</p>
+<pre><code># Remplacer l'import Groq par httpx/requests vers Ollama
+import requests
+from app.config import settings
+
+class OllamaLLMGenerator:
+    def generate(self, question: str, context_chunks: list) -> str:
+        prompt = _build_prompt(question, context_chunks)
+        response = requests.post(
+            f"{settings.ollama_base_url}/api/generate",
+            json={
+                "model": settings.llm_model,
+                "prompt": prompt,
+                "stream": False,
+            },
+            timeout=120,
+        )
+        response.raise_for_status()
+        return response.json()["response"].strip()
+
+ollama_generator = OllamaLLMGenerator()</code></pre>
+
+<p>Le fichier <code>backend/app/infrastructure/embeddings.py</code> pour les embeddings Ollama :</p>
+<pre><code>import requests
+from app.config import settings
+
+def embed_texts(texts):
+    embeddings = []
+    for text in texts:
+        r = requests.post(
+            f"{settings.ollama_base_url}/api/embeddings",
+            json={"model": settings.embedding_model, "prompt": text},
+            timeout=60,
+        )
+        r.raise_for_status()
+        embeddings.append(r.json()["embedding"])
+    return embeddings
+
+def embed_query(query):
+    return embed_texts([query])[0]</code></pre>
+
+<h3>Modèles recommandés selon votre matériel</h3>
+<table>
+  <tr><th>RAM disponible</th><th>Modèle LLM</th><th>Modèle Embeddings</th><th>Qualité</th></tr>
+  <tr><td>8 Go</td><td><code>llama3.2:3b</code> (2.3 Go)</td><td><code>nomic-embed-text</code></td><td>Acceptable</td></tr>
+  <tr><td>16 Go</td><td><code>mistral</code> (4.1 Go)</td><td><code>nomic-embed-text</code></td><td>Bonne</td></tr>
+  <tr><td>32 Go</td><td><code>llama3.1:8b</code> (4.9 Go)</td><td><code>mxbai-embed-large</code></td><td>Très bonne</td></tr>
+  <tr><td>64 Go+</td><td><code>llama3.3:70b</code> (43 Go)</td><td><code>mxbai-embed-large</code></td><td>Excellente</td></tr>
+</table>
+</section>
+
+<!-- MATÉRIEL -->
+<section id="materiel">
+<h2><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>Équipement matériel minimum</h2>
+
+<div class="card card-warn">
+  <strong>Important</strong> — Les exigences varient selon le mode d'utilisation. Le mode Cloud (Groq + Cohere) est très léger. Le mode local Ollama nécessite plus de ressources.
+</div>
+
+<h3>Mode Cloud (configuration actuelle — Groq + Cohere)</h3>
+<table>
+  <tr><th>Composant</th><th>Minimum</th><th>Recommandé</th></tr>
+  <tr><td>CPU</td><td>2 cœurs</td><td>4 cœurs</td></tr>
+  <tr><td>RAM</td><td>4 Go</td><td>8 Go</td></tr>
+  <tr><td>Stockage</td><td>5 Go libres</td><td>20 Go SSD</td></tr>
+  <tr><td>GPU</td><td>Non requis</td><td>Non requis</td></tr>
+  <tr><td>Internet</td><td>Obligatoire (API Groq + Cohere)</td><td>10 Mbps+</td></tr>
+  <tr><td>OS</td><td>Windows 10, Ubuntu 20.04, macOS 12</td><td>Windows 11 / Ubuntu 22.04</td></tr>
+</table>
+
+<h3>Mode local Ollama — CPU uniquement</h3>
+<table>
+  <tr><th>Composant</th><th>Minimum (llama3.2:3b)</th><th>Recommandé (mistral)</th></tr>
+  <tr><td>CPU</td><td>4 cœurs x86-64</td><td>8 cœurs</td></tr>
+  <tr><td>RAM</td><td>8 Go (modèle 3B)</td><td>16 Go (modèle 7B)</td></tr>
+  <tr><td>Stockage</td><td>10 Go libres</td><td>30 Go SSD</td></tr>
+  <tr><td>GPU</td><td>Non requis</td><td>Non requis (CPU suffisant)</td></tr>
+  <tr><td>Internet</td><td>Pour le premier téléchargement des modèles uniquement</td><td></td></tr>
+  <tr><td>Temps de réponse</td><td>15–60 secondes</td><td>5–20 secondes</td></tr>
+</table>
+
+<h3>Mode local Ollama — avec GPU (optimal)</h3>
+<table>
+  <tr><th>Composant</th><th>Minimum</th><th>Recommandé</th></tr>
+  <tr><td>CPU</td><td>4 cœurs</td><td>8 cœurs</td></tr>
+  <tr><td>RAM système</td><td>16 Go</td><td>32 Go</td></tr>
+  <tr><td>GPU NVIDIA</td><td>8 Go VRAM (RTX 3060)</td><td>16 Go+ (RTX 4080)</td></tr>
+  <tr><td>GPU AMD</td><td>ROCm compatible (RX 6800+)</td><td>RX 7900 XTX</td></tr>
+  <tr><td>Stockage</td><td>50 Go SSD</td><td>100 Go NVMe</td></tr>
+  <tr><td>Temps de réponse</td><td>2–5 secondes</td><td>&lt; 2 secondes</td></tr>
+</table>
+
+<div class="card card-info">
+  <strong>Sur serveur de production</strong> — Pour un déploiement Render gratuit, le mode Cloud (Groq + Cohere) est le seul viable. Le plan gratuit offre 512 Mo RAM — suffisant uniquement si aucun modèle n'est chargé localement.
+</div>
+</section>
+
+<!-- CLOUD -->
+<section id="cloud">
+<h2><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>Déploiement Cloud (Render)</h2>
+
+<h3>Variables d'environnement Render — Backend</h3>
+<table>
+  <tr><th>Variable</th><th>Valeur</th><th>Obligatoire</th></tr>
+  <tr><td><code>GROQ_API_KEY</code></td><td>Clé depuis <a href="https://console.groq.com">console.groq.com</a></td><td>Oui</td></tr>
+  <tr><td><code>COHERE_API_KEY</code></td><td>Clé depuis <a href="https://dashboard.cohere.com">dashboard.cohere.com</a></td><td>Oui</td></tr>
+  <tr><td><code>JWT_SECRET_KEY</code></td><td><code>python -c "import secrets; print(secrets.token_hex(32))"</code></td><td>Oui</td></tr>
+  <tr><td><code>CHROMA_PERSIST_DIR</code></td><td><code>/data/chroma_db</code></td><td>Oui (avec disk)</td></tr>
+  <tr><td><code>AUDIT_DB_PATH</code></td><td><code>/data/audit_log.db</code></td><td>Oui (avec disk)</td></tr>
+  <tr><td><code>ACCESS_MANIFEST_PATH</code></td><td><code>/data/access_manifest.json</code></td><td>Oui</td></tr>
+  <tr><td><code>DOCUMENTS_DIR</code></td><td><code>/data/documents</code></td><td>Oui</td></tr>
+  <tr><td><code>USERS_FILE_PATH</code></td><td><code>/data/users.json</code></td><td>Oui</td></tr>
+  <tr><td><code>CORS_ORIGINS</code></td><td><code>["https://votre-frontend.onrender.com"]</code></td><td>Recommandé</td></tr>
+  <tr><td><code>EMBEDDING_MODEL</code></td><td><code>embed-multilingual-v3.0</code></td><td>Optionnel</td></tr>
+</table>
+
+<h3>Variables d'environnement Render — Frontend</h3>
+<table>
+  <tr><th>Variable</th><th>Valeur</th><th>Note</th></tr>
+  <tr><td><code>NEXT_PUBLIC_API_BASE_URL</code></td><td><code>https://kalatibackend.onrender.com</code></td><td>Injectée au build — redéployer si changée</td></tr>
+</table>
+
+<div class="card card-warn">
+  <strong>Disk Render obligatoire</strong> — Sans disk persistant, ChromaDB, SQLite et les documents uploadés sont perdus à chaque redéploiement. Configurer un disk monté sur <code>/data</code> dans les paramètres du service backend.
+</div>
+</section>
+
+<!-- API REFERENCE -->
+<section id="api">
+<h2><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>API Reference</h2>
+<table>
+  <tr><th>Méthode</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr>
+  <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/auth/login</code></td><td>Non</td><td>Connexion — retourne un JWT</td></tr>
+  <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/query</code></td><td>JWT</td><td>Question RAG → réponse + sources</td></tr>
+  <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/admin/documents</code></td><td>Admin</td><td>Liste des documents indexés</td></tr>
+  <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/admin/upload</code></td><td>Admin</td><td>Upload + indexation automatique</td></tr>
+  <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/api/admin/documents/{filename}</code></td><td>Admin</td><td>Supprime un document</td></tr>
+  <tr><td><span class="badge badge-orange">PATCH</span></td><td><code>/api/admin/documents/{filename}/groups</code></td><td>Admin</td><td>Modifie les groupes d'accès d'un document</td></tr>
+  <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/admin/ingest</code></td><td>Admin</td><td>Ré-indexe tout le dossier documents</td></tr>
+  <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/admin/users</code></td><td>Admin</td><td>Liste des utilisateurs</td></tr>
+  <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/admin/users</code></td><td>Admin</td><td>Créer un utilisateur</td></tr>
+  <tr><td><span class="badge badge-orange">PUT</span></td><td><code>/api/admin/users/{username}</code></td><td>Admin</td><td>Modifier un utilisateur</td></tr>
+  <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/api/admin/users/{username}</code></td><td>Admin</td><td>Supprimer un utilisateur</td></tr>
+  <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/admin/audit/logs</code></td><td>Admin</td><td>Journal d'audit</td></tr>
+  <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/voice/transcribe</code></td><td>JWT</td><td>Transcription audio → texte</td></tr>
+  <tr><td><span class="badge badge-blue">POST</span></td><td><code>/api/voice/query</code></td><td>JWT</td><td>Audio → RAG → réponse + audio</td></tr>
+  <tr><td><span class="badge badge-green">GET</span></td><td><code>/health</code></td><td>Non</td><td>Health check</td></tr>
+  <tr><td><span class="badge badge-green">GET</span></td><td><code>/api/system/about</code></td><td>Non</td><td>Informations sur le système</td></tr>
+</table>
+
+<h3>Exemple d'appel API (curl)</h3>
+<pre><code># 1. Connexion
+curl -X POST http://localhost:8000/api/auth/login \
+  -d "username=admin&password=camrail123" \
+  -H "Content-Type: application/x-www-form-urlencoded"
+
+# Réponse : { "access_token": "eyJ...", "groups": ["admin", ...] }
+
+# 2. Poser une question (remplacer TOKEN par le access_token)
+curl -X POST http://localhost:8000/api/query \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Quelle est la procédure d expédition d un train ?"}'</code></pre>
+</section>
+
+</main>
+
+<footer>
+  <p>KALATI RAG — Documentation technique · CAMRAIL · Generé automatiquement</p>
+</footer>
+
+<script>
+function showTab(id) {
+  // Find parent tabs container
+  const btn = event.target;
+  const tabsContainer = btn.closest('section') || document;
+  
+  // Hide all tabs in same section
+  tabsContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tabsContainer.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  
+  const target = document.getElementById(id);
+  if (target) target.classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>

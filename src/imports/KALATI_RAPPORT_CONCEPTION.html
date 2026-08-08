@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>KALATI RAG — Rapport de Conception Détaillée</title>
+<style>
+  :root { --red:#e63329; --dark:#1a2e4a; --light:#f8f9fa; --border:#dee2e6; --code:#2d2d2d; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Segoe UI',Arial,sans-serif; background:#fff; color:#222; line-height:1.7; }
+  header { background:var(--dark); color:#fff; padding:2rem 2.5rem; border-bottom:4px solid var(--red); }
+  header h1 { font-size:2rem; letter-spacing:1px; }
+  header p { opacity:.8; margin-top:.4rem; }
+  nav { background:#f1f3f5; border-bottom:1px solid var(--border); padding:.8rem 2.5rem; position:sticky; top:0; z-index:100; }
+  nav a { color:var(--dark); text-decoration:none; margin-right:1.3rem; font-size:.85rem; font-weight:600; }
+  nav a:hover { color:var(--red); }
+  main { max-width:1150px; margin:0 auto; padding:2rem 2.5rem; }
+  h2 { color:var(--dark); border-left:4px solid var(--red); padding-left:.8rem; margin:2.5rem 0 1rem; font-size:1.4rem; }
+  h3 { color:var(--dark); margin:1.5rem 0 .6rem; font-size:1.1rem; }
+  h4 { color:#555; margin:1rem 0 .4rem; font-size:1rem; }
+  p { margin-bottom:.8rem; }
+  ul,ol { margin:.5rem 0 1rem 1.5rem; }
+  li { margin-bottom:.4rem; }
+  code { background:#f0f0f0; border-radius:3px; padding:.1em .4em; font-size:.85em; font-family:'Courier New',monospace; }
+  pre { background:var(--code); color:#f8f8f2; border-radius:8px; padding:1.2rem; overflow-x:auto; margin:1rem 0; font-size:.82em; line-height:1.55; }
+  .badge { display:inline-block; padding:.15em .6em; border-radius:20px; font-size:.75em; font-weight:700; margin:.1em; white-space:nowrap; }
+  .badge-red { background:#fde8e8; color:var(--red); border:1px solid #f5c2c2; }
+  .badge-blue { background:#e8f0fe; color:#1a56db; border:1px solid #bfcefe; }
+  .badge-green { background:#e8f8ee; color:#0a7a3e; border:1px solid #b3e6c8; }
+  .badge-orange { background:#fff3e0; color:#b45309; border:1px solid #fdd89a; }
+  .badge-purple { background:#f3e8ff; color:#6b21a8; border:1px solid #d8b4fe; }
+  .card { background:var(--light); border:1px solid var(--border); border-radius:10px; padding:1.2rem 1.5rem; margin:1rem 0; }
+  .card-warn { background:#fff8e1; border-color:#fbc02d; }
+  .card-info { background:#e3f2fd; border-color:#1976d2; }
+  .card-success { background:#e8f5e9; border-color:#388e3c; }
+  table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:.85rem; }
+  th { background:var(--dark); color:#fff; padding:.55rem .8rem; text-align:left; }
+  td { padding:.55rem .8rem; border-bottom:1px solid var(--border); vertical-align:top; }
+  tr:nth-child(even) td { background:#f8f9fa; }
+  .table-wrap { overflow-x:auto; }
+  .diagram { background:#fafbfc; border:1px dashed #adb5bd; border-radius:8px; padding:1.2rem; font-family:'Courier New',monospace; font-size:.82rem; white-space:pre; overflow-x:auto; margin:1rem 0; line-height:1.5; }
+  .screen-card { border:1px solid var(--border); border-radius:10px; padding:1.2rem; margin:1rem 0; }
+  .screen-title { font-weight:700; color:var(--dark); font-size:1.05rem; margin-bottom:.3rem; }
+  .screen-access { font-size:.8rem; margin-bottom:.6rem; }
+  footer { background:var(--dark); color:#aaa; text-align:center; padding:1.5rem; margin-top:3rem; font-size:.85rem; }
+  @media(max-width:700px){ nav a{display:block;margin:.3rem 0;} }
+</style>
+</head>
+<body>
+<header>
+  <h1>📐 KALATI RAG — Rapport de Conception Détaillée</h1>
+  <p>Groupes de sécurité · Écrans · Rapports · Flux de données · CAMRAIL</p>
+</header>
+<nav>
+  <a href="#intro">Introduction</a>
+  <a href="#architecture">Architecture</a>
+  <a href="#groupes">Groupes de sécurité</a>
+  <a href="#ecrans">Écrans</a>
+  <a href="#rapports">Rapports</a>
+  <a href="#donnees-auto">Données générées</a>
+  <a href="#donnees-saisie">Données à saisir</a>
+  <a href="#flux">Flux de données</a>
+  <a href="#modele">Modèle de données</a>
+  <a href="#choix">Choix techniques</a>
+</nav>
+<main>
+
+<section id="intro">
+<h2>📋 Objet du document</h2>
+<p>Ce rapport détaille les choix de conception du système KALATI RAG, en réponse aux exigences du cahier des charges. Il couvre en particulier :</p>
+<ul>
+  <li>La définition et la logique des groupes de sécurité</li>
+  <li>L'inventaire des écrans de l'application et leurs conditions d'accès</li>
+  <li>Les rapports produits par le système</li>
+  <li>Les données générées automatiquement, par opposition aux données saisies manuellement</li>
+</ul>
+<div class="card card-info">
+  <strong>ℹ️ Documents complémentaires</strong> — L'installation technique est détaillée dans le <em>Guide Technique Complet</em>. Les procédures d'usage sont couvertes par le <em>Manuel Administrateur/Formateur</em> et le <em>Manuel Utilisateur</em>. Ce rapport-ci porte sur les <strong>choix de conception</strong>, pas sur le mode d'emploi.
+</div>
+</section>
+
+<section id="architecture">
+<h2>🏗️ Rappel de l'architecture générale</h2>
+<div class="diagram">Utilisateur (web / tablette / mobile)
+        │
+        ▼
+  Frontend (Next.js) ── authentification, chat, dashboard admin
+        │  HTTPS + JWT Bearer
+        ▼
+  Backend API (FastAPI) ── Clean Architecture (api / domain / infrastructure)
+        │
+        ├── domain/        logique métier pure (RAG, retrieval, auth)
+        │                   ne connaît ni FastAPI, ni ChromaDB, ni le LLM
+        │
+        ├── infrastructure/ adaptateurs concrets
+        │     ├── vector_store.py     → ChromaDB (recherche sémantique)
+        │     ├── llm_client.py       → LLM (génération de réponse)
+        │     ├── vision_client.py    → modèle de vision (description d'image)
+        │     ├── voice_client.py     → transcription + synthèse vocale
+        │     ├── document_ingestion.py → lecture/découpage des documents
+        │     └── audit_repository.py / user_repository.py → SQLite
+        │
+        └── api/routes/     endpoints HTTP (auth, query, admin, upload, voice, system)</div>
+
+<p>Ce découpage en couches (api / domain / infrastructure) permet de changer un composant technique (ex: passer d'un LLM local à un LLM cloud) sans modifier la logique métier — c'est ce qui a permis de faire cohabiter une <strong>configuration de démonstration</strong> (services cloud, hébergement Render) et une <strong>configuration de production recommandée</strong> (modèles auto-hébergés, infrastructure maîtrisée) sans dupliquer le code métier.</p>
+
+<div class="card card-warn">
+  <strong>⚠️ Distinction essentielle à retenir dans ce rapport</strong>
+  <p>Deux configurations de déploiement coexistent, avec des implications différentes en matière de confidentialité :</p>
+  <table>
+    <tr><th>Configuration</th><th>LLM / Embeddings / Vision / Vocal</th><th>Confidentialité des données</th><th>Usage recommandé</th></tr>
+    <tr><td><strong>Démonstration</strong></td><td>Services cloud tiers (Groq, Cohere)</td><td>Données transmises à des tiers externes</td><td>Démonstration, soutenance, données fictives uniquement</td></tr>
+    <tr><td><strong>Production</strong></td><td>Modèles auto-hébergés (Ollama, Whisper local, Piper)</td><td>Aucune donnée transmise hors de l'infrastructure maîtrisée</td><td>Exploitation réelle avec documents CAMRAIL confidentiels</td></tr>
+  </table>
+</div>
+</section>
+
+<section id="groupes">
+<h2>🔒 Conception des groupes de sécurité</h2>
+
+<h3>Principe de conception</h3>
+<p>Le cahier des charges demande de <em>"définir les groupes de sécurité en rapport avec le profil du personnel et la confidentialité des données de l'entreprise"</em>. La conception retenue repose sur un principe simple et volontairement strict : <strong>tout document est réservé par défaut, l'accès doit être explicitement accordé</strong> (logique "fail-safe" ou "deny by default").</p>
+
+<div class="card card-success">
+  <strong>✅ Pourquoi ce choix plutôt que l'inverse ("tout ouvert sauf restriction explicite")</strong>
+  <p>Une erreur d'oubli côté administrateur (ne pas restreindre un document) est moins dangereuse dans ce modèle qu'une erreur d'oubli dans le modèle inverse (ne pas restreindre = exposition accidentelle). Concrètement : un document non associé à un groupe dans le manifeste d'accès n'est visible que par les administrateurs, jamais par tout le personnel par défaut.</p>
+</div>
+
+<h3>Les six groupes définis</h3>
+<table>
+<tr><th>Groupe</th><th>Correspondance métier CAMRAIL</th><th>Niveau d'accès</th></tr>
+<tr><td><span class="badge badge-red">admin</span></td><td>Coordination Informatique (CI)</td><td>Accès à tous les documents, gestion des comptes et du système</td></tr>
+<tr><td><span class="badge badge-purple">direction</span></td><td>Direction Générale et Directions rattachées</td><td>Documents stratégiques et de direction</td></tr>
+<tr><td><span class="badge badge-blue">rh</span></td><td>Ressources Humaines</td><td>Convention Collective, dossiers RH, politique sociale</td></tr>
+<tr><td><span class="badge badge-orange">securite</span></td><td>Agents de sécurité, personnel de gare</td><td>IGS, consignes de sécurité, procédures Marche à Vue</td></tr>
+<tr><td><span class="badge badge-green">maintenance</span></td><td>Équipes de maintenance ferroviaire</td><td>Modes opératoires techniques, procédures de révision</td></tr>
+<tr><td>transport</td><td>Personnel d'exploitation / transport</td><td>Procédures d'expédition, gestion des circulations</td></tr>
+</table>
+
+<div class="card card-info">
+  <strong>ℹ️ Cumul de groupes</strong> — Un utilisateur peut appartenir à plusieurs groupes simultanément (ex: un responsable de gare cumulant sécurité et transport). L'accès résultant est l'union des documents accessibles à chacun de ses groupes, jamais l'intersection.
+</div>
+
+<h3>Mécanisme technique</h3>
+<p>Chaque fragment de document indexé (chunk) porte un attribut listant les groupes autorisés à le consulter. Au moment d'une recherche, le filtre est appliqué <strong>avant</strong> que le modèle de langage ne voie le contenu — un document non autorisé n'est jamais transmis au générateur de réponse, il n'existe tout simplement pas pour la recherche de cet utilisateur. Ce filtrage s'applique identiquement aux deux méthodes de recherche combinées (lexicale et sémantique), pour qu'aucune des deux ne puisse être utilisée comme voie de contournement de l'autre.</p>
+
+<h3>Extensibilité</h3>
+<p>La liste des groupes est centralisée dans la configuration du système. L'ajout d'un nouveau groupe (ex: à l'occasion d'une réorganisation interne CAMRAIL) ne nécessite pas de modification du moteur de recherche, uniquement une mise à jour de cette liste et une ré-association des documents concernés.</p>
+</section>
+
+<section id="ecrans">
+<h2>🖥️ Inventaire des écrans</h2>
+
+<div class="screen-card">
+  <div class="screen-title">1. Écran de connexion</div>
+  <div class="screen-access"><span class="badge badge-green">Public</span></div>
+  <p>Saisie identifiant/mot de passe. Protégé par limitation du nombre de tentatives (anti-bruteforce).</p>
+</div>
+
+<div class="screen-card">
+  <div class="screen-title">2. Écran principal — Recherche / Chat</div>
+  <div class="screen-access"><span class="badge badge-blue">Tout utilisateur authentifié</span></div>
+  <p>Zone de saisie de question (texte ou vocal), affichage de la réponse générée et des sources documentaires citées. Écran central de l'application, utilisé quotidiennement par l'ensemble du personnel.</p>
+</div>
+
+<div class="screen-card">
+  <div class="screen-title">3. Écran "À propos / Transparence"</div>
+  <div class="screen-access"><span class="badge badge-green">Public (accessible sans connexion)</span></div>
+  <p>Présente le fonctionnement du système, ses limites, les données utilisées et la politique de journalisation — répond à l'exigence de transparence et d'explicabilité du cahier des charges.</p>
+</div>
+
+<div class="screen-card">
+  <div class="screen-title">4. Dashboard Admin — Gestion des documents</div>
+  <div class="screen-access"><span class="badge badge-red">Groupe admin uniquement</span></div>
+  <p>Upload par glisser-déposer, sélection des groupes autorisés par document, liste des documents indexés avec leur statut, suppression, déclenchement d'une ré-indexation complète.</p>
+</div>
+
+<div class="screen-card">
+  <div class="screen-title">5. Dashboard Admin — Gestion des utilisateurs</div>
+  <div class="screen-access"><span class="badge badge-red">Groupe admin uniquement</span></div>
+  <p>Création, modification (groupes, nom, mot de passe) et suppression de comptes utilisateurs.</p>
+</div>
+
+<div class="screen-card">
+  <div class="screen-title">6. Dashboard Admin — Historique d'audit</div>
+  <div class="screen-access"><span class="badge badge-red">Groupe admin uniquement</span></div>
+  <p>Consultation de l'ensemble des requêtes traitées par le système (qui, quand, quelle question, quelle réponse, quelles sources), avec filtrage par utilisateur.</p>
+</div>
+
+<div class="screen-card">
+  <div class="screen-title">7. Écran de gestion du profil personnel</div>
+  <div class="screen-access"><span class="badge badge-blue">Tout utilisateur authentifié</span></div>
+  <p>Changement de son propre mot de passe.</p>
+</div>
+</section>
+
+<section id="rapports">
+<h2>📊 Rapports produits par le système</h2>
+<table>
+<tr><th>Rapport</th><th>Contenu</th><th>Destinataire</th><th>Fréquence</th></tr>
+<tr><td>Historique d'audit</td><td>Journal exhaustif des requêtes (utilisateur, date, question, réponse, sources)</td><td>Coordination Informatique</td><td>Consultable en continu</td></tr>
+<tr><td>Rapport d'ingestion</td><td>Nombre de documents traités, nombre de fragments créés, erreurs éventuelles</td><td>Administrateur, au moment de l'upload/ré-indexation</td><td>À chaque opération d'ingestion</td></tr>
+<tr><td>Inventaire documentaire</td><td>Liste des documents indexés, taille, groupes d'accès, présence au manifeste</td><td>Administrateur</td><td>Consultable en continu</td></tr>
+<tr><td>Rapport de conformité (proposé)</td><td>Extraction périodique de l'audit pour contrôle réglementaire</td><td>Direction / Contrôle interne</td><td>À définir selon la politique de rétention</td></tr>
+</table>
+<div class="card card-warn">
+  <strong>⚠️ À trancher avec la CI</strong> — La politique de rétention des données d'audit (durée de conservation, procédure d'archivage ou de purge) n'est pas encore formalisée. C'est une décision de gouvernance, pas un choix technique, à valider avant mise en production.
+</div>
+</section>
+
+<section id="donnees-auto">
+<h2>⚙️ Données générées automatiquement par le système</h2>
+<p>Ces données sont produites par KALATI sans intervention humaine directe, à partir des données saisies :</p>
+<table>
+<tr><th>Donnée générée</th><th>Origine</th><th>Où elle est stockée</th></tr>
+<tr><td>Réponse en langage naturel</td><td>Génération par le modèle de langage à partir des documents trouvés</td><td>Non persistée en tant que telle, uniquement visible à l'écran et journalisée dans l'audit</td></tr>
+<tr><td>Fragments de documents (chunks)</td><td>Découpage automatique des documents uploadés</td><td>Base vectorielle (ChromaDB)</td></tr>
+<tr><td>Vecteurs d'embedding</td><td>Encodage numérique du sens de chaque fragment</td><td>Base vectorielle (ChromaDB)</td></tr>
+<tr><td>Description textuelle des images/schémas</td><td>Analyse automatique par le modèle de vision</td><td>Indexée comme un fragment de texte normal</td></tr>
+<tr><td>Tableaux convertis en texte structuré</td><td>Extraction automatique des tableaux de documents PDF</td><td>Indexée comme un fragment de texte normal</td></tr>
+<tr><td>Transcription d'une question vocale</td><td>Reconnaissance vocale automatique</td><td>Non persistée seule ; la question textuelle résultante est journalisée dans l'audit</td></tr>
+<tr><td>Réponse audio synthétisée</td><td>Synthèse vocale automatique de la réponse texte</td><td>Fichier temporaire, non conservé durablement</td></tr>
+<tr><td>Token de session (JWT)</td><td>Généré à la connexion, signé par le serveur</td><td>Côté client uniquement (navigateur), jamais stocké côté serveur</td></tr>
+<tr><td>Entrée du journal d'audit</td><td>Générée automatiquement à chaque question traitée</td><td>Base SQLite dédiée à l'audit</td></tr>
+<tr><td>Mot de passe haché (bcrypt)</td><td>Transformation automatique du mot de passe saisi, jamais stocké en clair</td><td>Base des utilisateurs (SQLite)</td></tr>
+</table>
+</section>
+
+<section id="donnees-saisie">
+<h2>✍️ Données obligatoires à saisir manuellement</h2>
+<table>
+<tr><th>Écran</th><th>Champ</th><th>Saisi par</th><th>Obligatoire</th></tr>
+<tr><td>Connexion</td><td>Identifiant, mot de passe</td><td>Tout utilisateur</td><td>Oui</td></tr>
+<tr><td>Recherche</td><td>Question (texte ou audio)</td><td>Tout utilisateur</td><td>Oui</td></tr>
+<tr><td>Upload de document</td><td>Fichier(s) à indexer</td><td>Administrateur</td><td>Oui</td></tr>
+<tr><td>Upload de document</td><td>Groupes autorisés à consulter le document</td><td>Administrateur</td><td>Oui (fail-safe si omis : réservé aux admins)</td></tr>
+<tr><td>Création d'utilisateur</td><td>Identifiant, nom complet, mot de passe, groupes</td><td>Administrateur</td><td>Oui</td></tr>
+<tr><td>Changement de mot de passe</td><td>Mot de passe actuel, nouveau mot de passe</td><td>Utilisateur concerné</td><td>Oui (l'ancien mot de passe est requis, pour éviter une prise de contrôle de compte sur une session laissée ouverte)</td></tr>
+</table>
+<div class="card card-info">
+  <strong>ℹ️ Principe de conception</strong> — Le nombre de champs obligatoires a été volontairement limité au strict nécessaire pour ne pas alourdir l'usage quotidien, en particulier pour l'écran de recherche utilisé par l'ensemble du personnel. La complexité (groupes de sécurité, gestion documentaire) est concentrée sur les écrans réservés aux administrateurs.
+</div>
+</section>
+
+<section id="flux">
+<h2>🔄 Flux de données principaux</h2>
+
+<h3>Flux d'ingestion d'un document</h3>
+<div class="diagram">Admin dépose un fichier + sélectionne les groupes
+        │
+        ▼
+Validation (format, taille, contenu binaire réel)
+        │
+        ▼
+Sauvegarde du fichier + mise à jour du manifeste d'accès
+        │
+        ▼
+Lecture et découpage en fragments (texte, + tableaux/images si PDF)
+        │
+        ▼
+Encodage vectoriel de chaque fragment (embeddings)
+        │
+        ▼
+Stockage dans la base vectorielle, avec l'étiquette des groupes autorisés</div>
+
+<h3>Flux d'une question utilisateur</h3>
+<div class="diagram">Utilisateur pose une question (texte ou vocal)
+        │
+        ▼
+[Si vocal] Transcription automatique en texte
+        │
+        ▼
+Recherche hybride (lexicale + sémantique), FILTRÉE par les groupes de l'utilisateur
+        │
+        ▼
+Fusion des résultats des deux méthodes de recherche
+        │
+        ▼
+Génération de la réponse par le modèle de langage, à partir UNIQUEMENT
+des fragments trouvés et autorisés
+        │
+        ▼
+Réponse affichée + sources citées + [si vocal] synthèse audio
+        │
+        ▼
+Enregistrement automatique dans le journal d'audit</div>
+</section>
+
+<section id="modele">
+<h2>🗄️ Modèle de données simplifié</h2>
+<table>
+<tr><th>Entité</th><th>Champs principaux</th><th>Stockage</th></tr>
+<tr><td>Utilisateur</td><td>identifiant, nom complet, mot de passe (haché), groupes</td><td>SQLite</td></tr>
+<tr><td>Document</td><td>nom de fichier, taille, groupes autorisés (manifeste)</td><td>Système de fichiers + fichier manifeste JSON</td></tr>
+<tr><td>Fragment indexé (chunk)</td><td>texte, document d'origine, type (texte/tableau/image), groupes autorisés, vecteur d'embedding</td><td>Base vectorielle (ChromaDB)</td></tr>
+<tr><td>Entrée d'audit</td><td>horodatage, utilisateur, groupes, question, réponse, sources utilisées</td><td>SQLite</td></tr>
+</table>
+</section>
+
+<section id="choix">
+<h2>🎯 Justification des principaux choix techniques</h2>
+<table>
+<tr><th>Choix</th><th>Justification</th></tr>
+<tr><td>Recherche hybride (lexicale + sémantique)</td><td>La recherche sémantique seule peut manquer des termes exacts (numéros d'article, sigles) ; la recherche lexicale seule ne comprend pas les reformulations. La combinaison couvre les deux cas.</td></tr>
+<tr><td>Filtrage par groupe avant génération</td><td>Un document non autorisé ne doit jamais être vu par le modèle de langage, pas seulement caché à l'affichage — élimine tout risque de fuite via la réponse générée.</td></tr>
+<tr><td>Architecture en couches (Clean Architecture)</td><td>Permet de faire évoluer les composants techniques (changement de modèle, de base de données) sans réécrire la logique métier, et facilite les tests.</td></tr>
+<tr><td>Authentification par token JWT</td><td>Standard robuste, sans état côté serveur à gérer pour chaque requête, avec expiration automatique intégrée.</td></tr>
+<tr><td>Journalisation systématique</td><td>Répond directement à l'exigence réglementaire de traçabilité du cahier des charges.</td></tr>
+<tr><td>Modèles auto-hébergés en production</td><td>Garantit qu'aucune donnée normative CAMRAIL ne transite par un service tiers externe, répondant à l'exigence de protection contre la fuite de données.</td></tr>
+</table>
+</section>
+
+</main>
+<footer>
+  <p>KALATI RAG — Rapport de Conception Détaillée · CAMRAIL</p>
+</footer>
+</body>
+</html>

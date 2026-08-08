@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --color-brand: #e63329;
+  --color-brand-dark: #c41f15;
+  --color-ink: #0f1923;
+  --color-muted: #6b7a8d;
+  --color-surface: #f4f6f9;
+  --color-border: #d1d9e0;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+}
+
+/* Hide scrollbar by default */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,.15); border-radius: 3px; }
+
+/* Fade-in animation */
+.fade-up {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.fade-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Code block syntax coloring */
+.token-key { color: #79c0ff; }
+.token-val { color: #a5d6ff; }
+.token-comment { color: #8b949e; }
+.token-string { color: #a8d1a8; }
+
