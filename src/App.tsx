@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Menu, X, Search, BookOpen, ChevronRight, Code2, ExternalLink, Download, FileText, FileType, Loader2, Phone, Mail, GraduationCap } from 'lucide-react'
+import { Menu, X, Search, BookOpen, ChevronRight, Code2, ExternalLink, Download, FileText, FileType, Loader2, Phone, Mail, GraduationCap, User } from 'lucide-react'
 import { exportPDF, exportDOCX } from './utils/exportDoc'
 import camrailLogo from './imports/camrail-removebg-preview-1786060006378.png'
 import GuideTechnique, { GUIDE_SECTIONS } from './volets/GuideTechnique'
@@ -346,6 +346,66 @@ function ExportMenu({ contentRef, title }: { contentRef: React.RefObject<HTMLDiv
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── About us ─────────────────────────────────────────────────────────────────
+
+function AboutUs() {
+  return (
+    <div className="mt-14 rounded-2xl border border-border bg-surface overflow-hidden">
+      {/* Header band */}
+      <div className="bg-brand px-6 py-4 flex items-center gap-3">
+        <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-white/15">
+          <User size={18} className="text-white" />
+        </div>
+        <div>
+          <p className="text-white font-bold text-base leading-tight">À propos de l'auteure</p>
+          <p className="text-white/70 text-[12px]">Réalisé dans le cadre du projet KALATI · CAMRAIL</p>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="px-6 py-5 flex flex-col sm:flex-row gap-6 items-start">
+        {/* Avatar initials */}
+        <div className="flex-shrink-0 h-16 w-16 rounded-full bg-brand/10 border-2 border-brand/20 flex items-center justify-center">
+          <span className="text-brand font-bold text-xl select-none">BM</span>
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-bold text-ink leading-tight">Babouma Malaika</h3>
+          <p className="text-[13px] text-muted mt-0.5 mb-3">5<sup>ème</sup> année · Cycle Ingénieur</p>
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand/8 text-brand text-[12px] font-semibold">
+              <GraduationCap size={13} />
+              Saint Jean Ingénieur
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[12px] font-semibold">
+              Management des Systèmes d'Information
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <a
+              href="tel:+237696784809"
+              className="inline-flex items-center gap-2 text-[13px] text-ink hover:text-brand transition-colors"
+            >
+              <Phone size={14} className="text-brand flex-shrink-0" />
+              696 784 809
+            </a>
+            <a
+              href="mailto:babouma.suzanne@saintjeaningenieur.org"
+              className="inline-flex items-center gap-2 text-[13px] text-ink hover:text-brand transition-colors break-all"
+            >
+              <Mail size={14} className="text-brand flex-shrink-0" />
+              babouma.suzanne@saintjeaningenieur.org
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
