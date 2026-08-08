@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Download } from 'lucide-react'
+import {
+  Download, Menu, X, BookOpen, Users, FileText, ClipboardCheck,
+  ChevronRight,
+} from 'lucide-react'
 import camrailLogo from './imports/camrail-removebg-preview-1786060006378.png'
 import GuideTechnique, { GUIDE_SECTIONS } from './volets/GuideTechnique'
 import ManuelUtilisateur, { MANUEL_SECTIONS } from './volets/ManuelUtilisateur'
@@ -13,6 +16,7 @@ const TABS = [
     id: 'guide',
     label: 'Guide Technique',
     subtitle: 'Installation & API',
+    icon: BookOpen,
     sections: GUIDE_SECTIONS,
     Component: GuideTechnique,
   },
@@ -20,6 +24,7 @@ const TABS = [
     id: 'manuel',
     label: 'Manuel Utilisateur',
     subtitle: 'Usage quotidien',
+    icon: Users,
     sections: MANUEL_SECTIONS,
     Component: ManuelUtilisateur,
   },
@@ -27,6 +32,7 @@ const TABS = [
     id: 'rapport',
     label: 'Rapport de Conception',
     subtitle: 'Architecture & Choix',
+    icon: FileText,
     sections: RAPPORT_SECTIONS,
     Component: RapportConception,
   },
@@ -34,6 +40,7 @@ const TABS = [
     id: 'tests',
     label: 'Dossier Test & Recette',
     subtitle: 'Validation & Recette',
+    icon: ClipboardCheck,
     sections: TEST_SECTIONS,
     Component: TestRecette,
   },
@@ -45,13 +52,20 @@ export default function App() {
   const [activeTab, setActiveTab] = useState(TABS[0].id)
   const [activeSection, setActiveSection] = useState('')
   const [scrollPct, setScrollPct] = useState(0)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const currentTab = TABS.find(t => t.id === activeTab)!
+  const ActiveComponent = currentTab.Component
+
+  useEffect(() => {
+    document.title = `${currentTab.label} · KALATI RAG`
+  }, [currentTab.label])
 
   // Reset scroll + active section on tab change
   const handleTabChange = (id: string) => {
     setActiveTab(id)
     setActiveSection('')
+    setSidebarOpen(false)
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
 
@@ -64,7 +78,7 @@ export default function App() {
     const sections = currentTab.sections
     for (const sec of [...sections].reverse()) {
       const el = document.getElementById(sec.id)
-      if (el && el.getBoundingClientRect().top <= 130) {
+      if (el && el.getBoundingClientRect().top <= 120) {
         setActiveSection(sec.id)
         break
       }
@@ -77,116 +91,180 @@ export default function App() {
   }, [handleScroll])
 
   const scrollTo = (id: string) => {
+    setSidebarOpen(false)
     const el = document.getElementById(id)
     if (el) {
-      const top = el.getBoundingClientRect().top + window.scrollY - 108
+      const top = el.getBoundingClientRect().top + window.scrollY - 88
       window.scrollTo({ top, behavior: 'smooth' })
     }
   }
 
+  const activeSectionLabel =
+    currentTab.sections.find(s => s.id === activeSection)?.label ?? 'Aperçu'
+
   return (
     <div className="min-h-screen bg-white">
 
-      {/* ── Reading progress bar ── */}
-      <div
-        className="no-print fixed top-0 left-0 h-0.5 bg-[#e2241b] z-50 transition-all duration-100"
-        style={{ width: `${scrollPct}%` }}
-      />
-
-      {/* ── Sticky top shell ── */}
-      <div className="no-print sticky top-0 z-40 bg-white shadow-sm border-b border-[#f0d4d2]">
-
-        {/* Brand header */}
-        <div className="bg-[#e2241b] text-white">
-          <div className="max-w-screen-xl mx-auto px-5 py-3 flex items-center gap-4">
-            <div className="bg-white rounded-lg p-1 flex-shrink-0">
-              <img
-                src={camrailLogo}
-                alt="Logo CAMRAIL"
-                className="h-9 w-auto object-contain"
-              />
-            </div>
-            <div>
-              <h1 className="font-bold text-base leading-tight tracking-tight">
-                KALATI RAG
-              </h1>
-              <p className="text-xs text-white/70 leading-tight">
-                Portail de documentation · CAMRAIL
-              </p>
-            </div>
-            <div className="ml-auto flex items-center gap-2">
-              <span className="hidden sm:flex items-center gap-1.5 bg-white/15 text-white border border-white/30 px-3 py-1 rounded-full text-xs font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                Système actif
-              </span>
-              <button
-                onClick={() => window.print()}
-                title="Exporter le document affiché en PDF"
-                className="flex items-center gap-1.5 bg-white text-[#e2241b] hover:bg-red-50 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm transition-colors"
-              >
-                <Download size={13} />
-                Export PDF
-              </button>
-            </div>
+      {/* ─────────────── SIDEBAR ─────────────── */}
+      <aside
+        className={`no-print fixed inset-y-0 left-0 z-50 w-72 bg-[#e2241b] text-white flex flex-col
+          transition-transform duration-300 md:translate-x-0
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
+        {/* Brand */}
+        <div className="flex items-center gap-3 px-5 h-[72px] border-b border-white/15 flex-shrink-0">
+          <div className="bg-white rounded-lg p-1.5 flex-shrink-0">
+            <img src={camrailLogo} alt="Logo CAMRAIL" className="h-8 w-auto object-contain" />
           </div>
+          <div className="min-w-0">
+            <h1 className="font-bold text-[15px] leading-tight tracking-tight">KALATI RAG</h1>
+            <p className="text-[11px] text-white/70 leading-tight truncate">Documentation · CAMRAIL</p>
+          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden ml-auto text-white/80 hover:text-white"
+            aria-label="Fermer le menu"
+          >
+            <X size={20} />
+          </button>
         </div>
 
-        {/* Document tabs */}
-        <div className="max-w-screen-xl mx-auto px-5">
-          <div className="flex gap-0 overflow-x-auto">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={`flex-shrink-0 px-5 py-3 text-sm font-semibold border-b-2 transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? 'border-[#e2241b] text-[#e2241b] bg-red-50/60'
-                    : 'border-transparent text-[#7a7a7a] hover:text-[#1a1a1a] hover:border-[#f0d4d2]'
-                }`}
-              >
-                <span className="block leading-tight">{tab.label}</span>
-                <span className="block text-[10px] font-normal opacity-60">{tab.subtitle}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/50">
+            Documents
+          </p>
+          <div className="flex flex-col gap-1">
+            {TABS.map((tab) => {
+              const Icon = tab.icon
+              const active = activeTab === tab.id
+              return (
+                <div key={tab.id}>
+                  <button
+                    onClick={() => handleTabChange(tab.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors duration-200 ${
+                      active
+                        ? 'bg-white text-[#e2241b] shadow-sm'
+                        : 'text-white/90 hover:bg-white/10'
+                    }`}
+                  >
+                    <Icon size={18} className="flex-shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold leading-tight">{tab.label}</span>
+                      <span className={`block text-[11px] leading-tight ${active ? 'text-[#e2241b]/60' : 'text-white/55'}`}>
+                        {tab.subtitle}
+                      </span>
+                    </span>
+                  </button>
 
-        {/* Section nav (horizontal, per-tab) */}
-        <div className="border-t border-[#f0d4d2] bg-[#fff5f4]">
-          <div className="max-w-screen-xl mx-auto px-5">
-            <div className="flex gap-0 overflow-x-auto py-0.5">
-              {currentTab.sections.map((sec) => (
-                <button
-                  key={sec.id}
-                  onClick={() => scrollTo(sec.id)}
-                  className={`flex-shrink-0 px-4 py-2 text-xs font-medium transition-all duration-200 whitespace-nowrap rounded-sm ${
-                    activeSection === sec.id
-                      ? 'text-[#e2241b] bg-red-100 font-semibold'
-                      : 'text-[#7a7a7a] hover:text-[#1a1a1a] hover:bg-red-50'
-                  }`}
-                >
-                  {sec.label}
-                </button>
-              ))}
-            </div>
+                  {/* Section list for active doc */}
+                  {active && (
+                    <div className="mt-1 mb-2 ml-4 pl-3 border-l border-white/25 flex flex-col">
+                      {tab.sections.map((sec) => {
+                        const secActive = activeSection === sec.id
+                        return (
+                          <button
+                            key={sec.id}
+                            onClick={() => scrollTo(sec.id)}
+                            className={`text-left text-[13px] py-1.5 pl-2 pr-2 rounded-md transition-colors duration-150 ${
+                              secActive
+                                ? 'text-white font-semibold bg-white/15'
+                                : 'text-white/70 hover:text-white hover:bg-white/10'
+                            }`}
+                          >
+                            {sec.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
+        </nav>
+
+        {/* Sidebar footer */}
+        <div className="flex-shrink-0 px-5 py-3 border-t border-white/15">
+          <span className="flex items-center gap-2 text-[11px] text-white/70">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+            Système actif
+          </span>
         </div>
+      </aside>
+
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="no-print fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ─────────────── MAIN ─────────────── */}
+      <div className="md:ml-72 print:ml-0">
+
+        {/* Reading progress bar */}
+        <div
+          className="no-print fixed top-0 left-0 md:left-72 right-0 h-0.5 bg-[#e2241b] z-30 transition-all duration-100"
+          style={{ width: `calc(${scrollPct}% )` }}
+        />
+
+        {/* Top bar */}
+        <header className="no-print sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-[#f0d4d2]">
+          <div className="flex items-center gap-3 px-4 sm:px-8 h-[72px]">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden text-[#1a1a1a] hover:text-[#e2241b]"
+              aria-label="Ouvrir le menu"
+            >
+              <Menu size={22} />
+            </button>
+
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-1.5 text-sm min-w-0">
+              <span className="font-semibold text-[#1a1a1a] truncate">{currentTab.label}</span>
+              <ChevronRight size={14} className="text-[#c9c9c9] flex-shrink-0" />
+              <span className="text-[#7a7a7a] truncate">{activeSectionLabel}</span>
+            </div>
+
+            <button
+              onClick={() => window.print()}
+              title="Exporter le document affiché en PDF"
+              className="ml-auto flex items-center gap-1.5 bg-[#e2241b] text-white hover:bg-[#b3160f] px-3.5 py-2 rounded-lg text-xs font-semibold shadow-sm transition-colors flex-shrink-0"
+            >
+              <Download size={14} />
+              <span className="hidden sm:inline">Export PDF</span>
+            </button>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className="px-4 sm:px-8 lg:px-12 py-8 lg:py-10">
+          {/* Print-only document header */}
+          <div className="hidden print:block mb-6 pb-4 border-b-2 border-[#e2241b]">
+            <p className="text-sm text-[#7a7a7a]">KALATI RAG · CAMRAIL</p>
+            <h1 className="text-2xl font-bold text-[#1a1a1a]">{currentTab.label}</h1>
+          </div>
+
+          <div className="max-w-4xl">
+            <ActiveComponent />
+          </div>
+        </main>
+
+        {/* Footer */}
+        <footer className="no-print border-t border-[#f0d4d2] px-4 sm:px-8 lg:px-12 py-6 mt-4">
+          <div className="max-w-4xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <p className="text-xs text-[#7a7a7a]">
+              KALATI RAG — Documentation technique · CAMRAIL
+            </p>
+            <p className="text-xs text-[#b0b0b0]">
+              {currentTab.label}
+            </p>
+          </div>
+        </footer>
       </div>
-
-      {/* ── Main content ── */}
-      <main className="max-w-screen-xl mx-auto px-5 lg:px-10 py-8">
-        <div className="max-w-4xl">
-          {activeTab === 'guide'   && <GuideTechnique />}
-          {activeTab === 'manuel'  && <ManuelUtilisateur />}
-          {activeTab === 'rapport' && <RapportConception />}
-          {activeTab === 'tests'   && <TestRecette />}
-        </div>
-      </main>
-
-      {/* ── Footer ── */}
-      <footer className="no-print bg-[#e2241b] text-white/80 text-center py-5 text-xs border-t border-[#b3160f] mt-8">
-        KALATI RAG — Documentation technique · CAMRAIL
-      </footer>
     </div>
   )
 }

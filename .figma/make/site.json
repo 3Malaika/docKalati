@@ -1,5 +1,6 @@
 {
-  "description": "This web application enhances user experience by modernizing page aesthetics with stylish designs and dynamic JavaScript effects, appealing to users seeking a visually engaging interface.",
+  "title": "KALATI RAG — Documentation CAMRAIL",
+  "description": "Portail de documentation technique de KALATI RAG pour CAMRAIL : guide technique, manuel utilisateur, rapport de conception et dossier de test & recette.",
   "robots": {
     "index": false
   },

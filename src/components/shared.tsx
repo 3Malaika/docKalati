@@ -21,7 +21,10 @@ export function CodeBlock({ code, lang = 'bash' }: { code: string; lang?: string
   return (
     <div className="relative my-4 rounded-xl overflow-hidden border border-[#2d3748] shadow-md">
       <div className="flex items-center justify-between px-4 py-2 bg-[#161b27] border-b border-[#2d3748]">
-        <span className="text-xs font-mono text-[#8b949e] tracking-widest uppercase">{lang}</span>
+        <span className="flex items-center gap-2 text-xs font-mono text-[#8b949e] tracking-widest uppercase">
+          <span className="w-2 h-2 rounded-full bg-[#e2241b]" />
+          {lang}
+        </span>
         <button
           onClick={copy}
           className="flex items-center gap-1.5 text-xs text-[#8b949e] hover:text-white transition-colors px-2 py-1 rounded hover:bg-white/10"
@@ -91,16 +94,23 @@ export function Step({ n, title, children }: { n: number; title: string; childre
 // ─── Section Heading ─────────────────────────────────────────────────────────
 export function SectionHeading({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   return (
-    <h2 className="flex items-center gap-3 text-xl font-bold text-[#1a1a1a] mt-10 mb-4 pb-2 border-b-2 border-[#e2241b]/25">
-      <span className="text-[#e2241b]">{icon}</span>
-      {children}
+    <h2 className="flex items-center gap-3 text-[22px] font-bold text-[#1a1a1a] mt-12 mb-5 first:mt-2 scroll-mt-24">
+      <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#e2241b] text-white flex-shrink-0 shadow-sm">
+        {icon}
+      </span>
+      <span className="text-balance">{children}</span>
     </h2>
   )
 }
 
 // ─── Sub Heading ─────────────────────────────────────────────────────────────
 export function H3({ children }: { children: ReactNode }) {
-  return <h3 className="font-bold text-[#1a1a1a] text-base mt-6 mb-2">{children}</h3>
+  return (
+    <h3 className="flex items-center gap-2 font-bold text-[#1a1a1a] text-base mt-7 mb-2.5">
+      <span className="w-1 h-4 rounded-full bg-[#e2241b] flex-shrink-0" />
+      {children}
+    </h3>
+  )
 }
 
 // ─── Tabs ────────────────────────────────────────────────────────────────────
