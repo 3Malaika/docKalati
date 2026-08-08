@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Menu, X, Search, BookOpen, ChevronRight, Code2, ExternalLink } from 'lucide-react'
 import camrailLogo from './imports/camrail-removebg-preview-1786060006378.png'
 import GuideTechnique, { GUIDE_SECTIONS } from './volets/GuideTechnique'
 import ManuelUtilisateur, { MANUEL_SECTIONS } from './volets/ManuelUtilisateur'
@@ -38,19 +39,23 @@ const TABS = [
   },
 ]
 
+const GITHUB_URL = 'https://github.com/3Malaika/kalati'
+
 // ─── App ─────────────────────────────────────────────────────────────────────
 
 export default function App() {
   const [activeTab, setActiveTab] = useState(TABS[0].id)
   const [activeSection, setActiveSection] = useState('')
   const [scrollPct, setScrollPct] = useState(0)
+  const [mobileNav, setMobileNav] = useState(false)
+  const [query, setQuery] = useState('')
 
   const currentTab = TABS.find(t => t.id === activeTab)!
 
-  // Reset scroll + active section on tab change
   const handleTabChange = (id: string) => {
     setActiveTab(id)
     setActiveSection('')
+    setMobileNav(false)
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
 
@@ -63,7 +68,7 @@ export default function App() {
     const sections = currentTab.sections
     for (const sec of [...sections].reverse()) {
       const el = document.getElementById(sec.id)
-      if (el && el.getBoundingClientRect().top <= 130) {
+      if (el && el.getBoundingClientRect().top <= 140) {
         setActiveSection(sec.id)
         break
       }
@@ -72,112 +77,228 @@ export default function App() {
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
   }, [handleScroll])
 
   const scrollTo = (id: string) => {
+    setMobileNav(false)
     const el = document.getElementById(id)
     if (el) {
-      const top = el.getBoundingClientRect().top + window.scrollY - 108
+      const top = el.getBoundingClientRect().top + window.scrollY - 96
       window.scrollTo({ top, behavior: 'smooth' })
     }
   }
 
+  const filteredSections = query.trim()
+    ? currentTab.sections.filter(s =>
+        s.label.toLowerCase().includes(query.trim().toLowerCase())
+      )
+    : currentTab.sections
+
   return (
-    <div className="min-h-screen bg-[#f4f6f9]">
+    <div className="min-h-screen bg-white text-ink">
 
       {/* ── Reading progress bar ── */}
       <div
-        className="fixed top-0 left-0 h-0.5 bg-[#e63329] z-50 transition-all duration-100"
+        className="fixed top-0 left-0 h-[3px] bg-brand z-[60] transition-all duration-100"
         style={{ width: `${scrollPct}%` }}
       />
 
-      {/* ── Sticky top shell ── */}
-      <div className="sticky top-0 z-40 bg-white shadow-sm border-b border-[#e5e9ef]">
+      {/* ── Top bar ── */}
+      <header className="sticky top-0 z-50 h-16 bg-white/90 backdrop-blur-md border-b border-border">
+        <div className="h-full max-w-[1400px] mx-auto px-4 lg:px-6 flex items-center gap-4">
+          {/* Mobile menu toggle */}
+          <button
+            onClick={() => setMobileNav(v => !v)}
+            className="lg:hidden -ml-1 p-2 rounded-md text-muted hover:bg-brand/5 hover:text-brand transition-colors"
+            aria-label="Ouvrir la navigation"
+          >
+            {mobileNav ? <X size={20} /> : <Menu size={20} />}
+          </button>
 
-        {/* Brand header */}
-        <div className="bg-[#0f1923] text-white">
-          <div className="max-w-screen-xl mx-auto px-5 py-3 flex items-center gap-4">
-            <div className="bg-white rounded-lg p-1 flex-shrink-0">
-              <img
-                src={camrailLogo}
-                alt="Logo CAMRAIL"
-                className="h-9 w-auto object-contain"
+          {/* Brand */}
+          <a href="#" className="flex items-center gap-3 flex-shrink-0" onClick={(e) => { e.preventDefault(); handleTabChange(TABS[0].id) }}>
+            <span className="flex items-center justify-center h-9 w-9 rounded-lg bg-brand shadow-sm shadow-brand/30">
+              <img src={camrailLogo} alt="Logo CAMRAIL" className="h-6 w-auto object-contain brightness-0 invert" />
+            </span>
+            <span className="leading-none">
+              <span className="block font-bold tracking-tight text-[15px]">
+                KALATI <span className="text-brand">RAG</span>
+              </span>
+              <span className="hidden sm:block text-[11px] text-muted mt-0.5">Documentation · CAMRAIL</span>
+            </span>
+          </a>
+
+          {/* Search */}
+          <div className="ml-auto flex items-center gap-2 w-full max-w-xs">
+            <div className="relative flex-1 hidden sm:block">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+              <input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Rechercher une section…"
+                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-border bg-surface focus:bg-white focus:border-brand focus:ring-2 focus:ring-brand/15 outline-none transition-all placeholder:text-muted/70"
               />
             </div>
-            <div>
-              <h1 className="font-bold text-base leading-tight tracking-tight">
-                KALATI RAG
-              </h1>
-              <p className="text-xs text-white/50 leading-tight">
-                Portail de documentation · CAMRAIL
-              </p>
-            </div>
-            <div className="ml-auto hidden sm:flex items-center gap-2">
-              <span className="flex items-center gap-1.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 px-3 py-1 rounded-full text-xs font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Système actif
-              </span>
-            </div>
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm font-medium text-ink hover:border-brand hover:text-brand transition-colors"
+            >
+              <Code2 size={16} />
+              <span className="hidden md:inline">GitHub</span>
+            </a>
           </div>
         </div>
+      </header>
 
-        {/* Document tabs */}
-        <div className="max-w-screen-xl mx-auto px-5">
-          <div className="flex gap-0 overflow-x-auto">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={`flex-shrink-0 px-5 py-3 text-sm font-semibold border-b-2 transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? 'border-[#e63329] text-[#e63329] bg-red-50/40'
-                    : 'border-transparent text-[#6b7a8d] hover:text-[#0f1923] hover:border-[#d1d9e0]'
-                }`}
-              >
-                <span className="block leading-tight">{tab.label}</span>
-                <span className="block text-[10px] font-normal opacity-60">{tab.subtitle}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* ── Layout: sidebar + content ── */}
+      <div className="max-w-[1400px] mx-auto lg:flex">
 
-        {/* Section nav (horizontal, per-tab) */}
-        <div className="border-t border-[#e5e9ef] bg-[#fafbfc]">
-          <div className="max-w-screen-xl mx-auto px-5">
-            <div className="flex gap-0 overflow-x-auto py-0.5">
-              {currentTab.sections.map((sec) => (
-                <button
-                  key={sec.id}
-                  onClick={() => scrollTo(sec.id)}
-                  className={`flex-shrink-0 px-4 py-2 text-xs font-medium transition-all duration-200 whitespace-nowrap rounded-sm ${
-                    activeSection === sec.id
-                      ? 'text-[#e63329] bg-red-50 font-semibold'
-                      : 'text-[#6b7a8d] hover:text-[#0f1923] hover:bg-slate-100'
-                  }`}
-                >
-                  {sec.label}
-                </button>
-              ))}
+        {/* Mobile overlay */}
+        {mobileNav && (
+          <div
+            className="fixed inset-0 top-16 bg-ink/40 z-30 lg:hidden"
+            onClick={() => setMobileNav(false)}
+          />
+        )}
+
+        {/* ── Sidebar ── */}
+        <aside
+          className={`fixed lg:sticky top-16 z-40 h-[calc(100vh-4rem)] w-72 flex-shrink-0 overflow-y-auto border-r border-border bg-white transition-transform duration-300 lg:translate-x-0 ${
+            mobileNav ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          <nav className="px-4 py-6">
+            {TABS.map(tab => {
+              const open = tab.id === activeTab
+              return (
+                <div key={tab.id} className="mb-5">
+                  <button
+                    onClick={() => handleTabChange(tab.id)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-colors ${
+                      open
+                        ? 'bg-brand/8 text-brand'
+                        : 'text-ink hover:bg-surface'
+                    }`}
+                  >
+                    <BookOpen size={16} className={open ? 'text-brand' : 'text-muted'} />
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-semibold leading-tight truncate">{tab.label}</span>
+                      <span className="block text-[11px] text-muted leading-tight truncate">{tab.subtitle}</span>
+                    </span>
+                    <ChevronRight
+                      size={15}
+                      className={`text-muted transition-transform ${open ? 'rotate-90' : ''}`}
+                    />
+                  </button>
+
+                  {/* Section links */}
+                  {open && (
+                    <ul className="mt-1.5 ml-3 pl-3 border-l border-border space-y-0.5">
+                      {(query.trim() ? filteredSections : tab.sections).map(sec => {
+                        const on = activeSection === sec.id
+                        return (
+                          <li key={sec.id}>
+                            <button
+                              onClick={() => scrollTo(sec.id)}
+                              className={`w-full text-left text-[13px] px-3 py-1.5 rounded-md -ml-px border-l-2 transition-all ${
+                                on
+                                  ? 'border-brand text-brand font-semibold bg-brand/5'
+                                  : 'border-transparent text-muted hover:text-ink hover:border-border'
+                              }`}
+                            >
+                              {sec.label}
+                            </button>
+                          </li>
+                        )
+                      })}
+                      {query.trim() && filteredSections.length === 0 && (
+                        <li className="text-[12px] text-muted px-3 py-1.5">Aucun résultat</li>
+                      )}
+                    </ul>
+                  )}
+                </div>
+              )
+            })}
+          </nav>
+        </aside>
+
+        {/* ── Main content ── */}
+        <div className="flex-1 min-w-0">
+          <main className="px-5 lg:px-12 py-10">
+            <div className="max-w-3xl mx-auto">
+
+              {/* Breadcrumb + title */}
+              <div className="mb-8">
+                <div className="flex items-center gap-1.5 text-[13px] text-muted mb-3">
+                  <span>Docs</span>
+                  <ChevronRight size={13} />
+                  <span className="text-brand font-medium">{currentTab.label}</span>
+                </div>
+                <h1 className="text-3xl font-bold tracking-tight text-balance">{currentTab.label}</h1>
+                <p className="mt-2 text-muted text-[15px]">{currentTab.subtitle}</p>
+                <div className="mt-5 h-px bg-gradient-to-r from-brand/40 via-border to-transparent" />
+              </div>
+
+              {activeTab === 'guide'   && <GuideTechnique />}
+              {activeTab === 'manuel'  && <ManuelUtilisateur />}
+              {activeTab === 'rapport' && <RapportConception />}
+              {activeTab === 'tests'   && <TestRecette />}
+
+              {/* Bottom nav between documents */}
+              <BottomNav activeTab={activeTab} onNavigate={handleTabChange} />
+
+              <footer className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2 text-[13px] text-muted">
+                <span>KALATI RAG — Documentation technique · CAMRAIL</span>
+                <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-brand transition-colors">
+                  3Malaika/kalati <ExternalLink size={13} />
+                </a>
+              </footer>
             </div>
-          </div>
+          </main>
         </div>
       </div>
+    </div>
+  )
+}
 
-      {/* ── Main content ── */}
-      <main className="max-w-screen-xl mx-auto px-5 lg:px-10 py-8">
-        <div className="max-w-4xl">
-          {activeTab === 'guide'   && <GuideTechnique />}
-          {activeTab === 'manuel'  && <ManuelUtilisateur />}
-          {activeTab === 'rapport' && <RapportConception />}
-          {activeTab === 'tests'   && <TestRecette />}
-        </div>
-      </main>
+// ─── Bottom "prev / next document" navigation ──────────────────────────────────
 
-      {/* ── Footer ── */}
-      <footer className="bg-[#0f1923] text-white/40 text-center py-5 text-xs border-t border-[#1e2d3d] mt-8">
-        KALATI RAG — Documentation technique · CAMRAIL
-      </footer>
+function BottomNav({ activeTab, onNavigate }: { activeTab: string; onNavigate: (id: string) => void }) {
+  const idx = TABS.findIndex(t => t.id === activeTab)
+  const prev = idx > 0 ? TABS[idx - 1] : null
+  const next = idx < TABS.length - 1 ? TABS[idx + 1] : null
+
+  return (
+    <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {prev ? (
+        <button
+          onClick={() => onNavigate(prev.id)}
+          className="group text-left rounded-xl border border-border p-4 hover:border-brand hover:bg-brand/5 transition-all"
+        >
+          <span className="block text-[11px] uppercase tracking-wider text-muted">Précédent</span>
+          <span className="mt-1 flex items-center gap-1.5 font-semibold text-ink group-hover:text-brand transition-colors">
+            <ChevronRight size={15} className="rotate-180" />
+            {prev.label}
+          </span>
+        </button>
+      ) : <span className="hidden sm:block" />}
+
+      {next && (
+        <button
+          onClick={() => onNavigate(next.id)}
+          className="group text-right rounded-xl border border-border p-4 hover:border-brand hover:bg-brand/5 transition-all sm:col-start-2"
+        >
+          <span className="block text-[11px] uppercase tracking-wider text-muted">Suivant</span>
+          <span className="mt-1 flex items-center justify-end gap-1.5 font-semibold text-ink group-hover:text-brand transition-colors">
+            {next.label}
+            <ChevronRight size={15} />
+          </span>
+        </button>
+      )}
     </div>
   )
 }
