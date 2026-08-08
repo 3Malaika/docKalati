@@ -140,7 +140,7 @@ export function DataTable({
     <div className="overflow-x-auto rounded-xl border border-[#d1d9e0] my-4 shadow-sm">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-[#0f1923] text-white">
+          <tr className="bg-brand text-white">
             {headers.map((h, i) => (
               <th key={i} className="text-left px-4 py-3 font-semibold">
                 {h}
