@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Download } from 'lucide-react'
 import camrailLogo from './imports/camrail-removebg-preview-1786060006378.png'
 import GuideTechnique, { GUIDE_SECTIONS } from './volets/GuideTechnique'
 import ManuelUtilisateur, { MANUEL_SECTIONS } from './volets/ManuelUtilisateur'
@@ -84,19 +85,19 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f6f9]">
+    <div className="min-h-screen bg-white">
 
       {/* ── Reading progress bar ── */}
       <div
-        className="fixed top-0 left-0 h-0.5 bg-[#e63329] z-50 transition-all duration-100"
+        className="no-print fixed top-0 left-0 h-0.5 bg-[#e2241b] z-50 transition-all duration-100"
         style={{ width: `${scrollPct}%` }}
       />
 
       {/* ── Sticky top shell ── */}
-      <div className="sticky top-0 z-40 bg-white shadow-sm border-b border-[#e5e9ef]">
+      <div className="no-print sticky top-0 z-40 bg-white shadow-sm border-b border-[#f0d4d2]">
 
         {/* Brand header */}
-        <div className="bg-[#0f1923] text-white">
+        <div className="bg-[#e2241b] text-white">
           <div className="max-w-screen-xl mx-auto px-5 py-3 flex items-center gap-4">
             <div className="bg-white rounded-lg p-1 flex-shrink-0">
               <img
@@ -109,15 +110,23 @@ export default function App() {
               <h1 className="font-bold text-base leading-tight tracking-tight">
                 KALATI RAG
               </h1>
-              <p className="text-xs text-white/50 leading-tight">
+              <p className="text-xs text-white/70 leading-tight">
                 Portail de documentation · CAMRAIL
               </p>
             </div>
-            <div className="ml-auto hidden sm:flex items-center gap-2">
-              <span className="flex items-center gap-1.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 px-3 py-1 rounded-full text-xs font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="ml-auto flex items-center gap-2">
+              <span className="hidden sm:flex items-center gap-1.5 bg-white/15 text-white border border-white/30 px-3 py-1 rounded-full text-xs font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                 Système actif
               </span>
+              <button
+                onClick={() => window.print()}
+                title="Exporter le document affiché en PDF"
+                className="flex items-center gap-1.5 bg-white text-[#e2241b] hover:bg-red-50 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm transition-colors"
+              >
+                <Download size={13} />
+                Export PDF
+              </button>
             </div>
           </div>
         </div>
@@ -131,8 +140,8 @@ export default function App() {
                 onClick={() => handleTabChange(tab.id)}
                 className={`flex-shrink-0 px-5 py-3 text-sm font-semibold border-b-2 transition-all duration-200 ${
                   activeTab === tab.id
-                    ? 'border-[#e63329] text-[#e63329] bg-red-50/40'
-                    : 'border-transparent text-[#6b7a8d] hover:text-[#0f1923] hover:border-[#d1d9e0]'
+                    ? 'border-[#e2241b] text-[#e2241b] bg-red-50/60'
+                    : 'border-transparent text-[#7a7a7a] hover:text-[#1a1a1a] hover:border-[#f0d4d2]'
                 }`}
               >
                 <span className="block leading-tight">{tab.label}</span>
@@ -143,7 +152,7 @@ export default function App() {
         </div>
 
         {/* Section nav (horizontal, per-tab) */}
-        <div className="border-t border-[#e5e9ef] bg-[#fafbfc]">
+        <div className="border-t border-[#f0d4d2] bg-[#fff5f4]">
           <div className="max-w-screen-xl mx-auto px-5">
             <div className="flex gap-0 overflow-x-auto py-0.5">
               {currentTab.sections.map((sec) => (
@@ -152,8 +161,8 @@ export default function App() {
                   onClick={() => scrollTo(sec.id)}
                   className={`flex-shrink-0 px-4 py-2 text-xs font-medium transition-all duration-200 whitespace-nowrap rounded-sm ${
                     activeSection === sec.id
-                      ? 'text-[#e63329] bg-red-50 font-semibold'
-                      : 'text-[#6b7a8d] hover:text-[#0f1923] hover:bg-slate-100'
+                      ? 'text-[#e2241b] bg-red-100 font-semibold'
+                      : 'text-[#7a7a7a] hover:text-[#1a1a1a] hover:bg-red-50'
                   }`}
                 >
                   {sec.label}
@@ -175,7 +184,7 @@ export default function App() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="bg-[#0f1923] text-white/40 text-center py-5 text-xs border-t border-[#1e2d3d] mt-8">
+      <footer className="no-print bg-[#e2241b] text-white/80 text-center py-5 text-xs border-t border-[#b3160f] mt-8">
         KALATI RAG — Documentation technique · CAMRAIL
       </footer>
     </div>

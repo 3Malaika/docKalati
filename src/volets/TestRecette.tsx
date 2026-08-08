@@ -23,10 +23,10 @@ export const TEST_SECTIONS = [
 
 function TestTable({ headers, rows }: { headers: string[]; rows: (string | ReactNode)[][] }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-[#d1d9e0] my-4 shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-[#f0d4d2] my-4 shadow-sm">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-[#0f1923] text-white">
+          <tr className="bg-[#e2241b] text-white">
             {headers.map((h, i) => (
               <th key={i} className={`text-left px-3 py-3 font-semibold ${i === 0 ? 'w-24' : ''} ${i === headers.length - 1 ? 'w-24 text-center' : ''}`}>{h}</th>
             ))}
@@ -34,9 +34,9 @@ function TestTable({ headers, rows }: { headers: string[]; rows: (string | React
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className={i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}>
+            <tr key={i} className={i % 2 === 1 ? 'bg-red-50/40' : 'bg-white'}>
               {row.map((cell, j) => (
-                <td key={j} className={`px-3 py-3 border-t border-[#d1d9e0] align-top text-xs ${j === 0 ? 'font-bold text-[#1a2e4a] font-mono whitespace-nowrap' : ''} ${j === row.length - 1 ? 'text-center' : ''}`}>
+                <td key={j} className={`px-3 py-3 border-t border-[#f0d4d2] align-top text-xs ${j === 0 ? 'font-bold text-[#1a1a1a] font-mono whitespace-nowrap' : ''} ${j === row.length - 1 ? 'text-center' : ''}`}>
                   {cell}
                 </td>
               ))}

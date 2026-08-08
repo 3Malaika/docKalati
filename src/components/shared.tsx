@@ -77,11 +77,11 @@ export function Card({ variant = 'default', children }: { variant?: CardVariant;
 export function Step({ n, title, children }: { n: number; title: string; children?: ReactNode }) {
   return (
     <div className="flex gap-4 mb-5">
-      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#e63329] text-white flex items-center justify-center text-sm font-bold mt-0.5 shadow-sm">
+      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#e2241b] text-white flex items-center justify-center text-sm font-bold mt-0.5 shadow-sm">
         {n}
       </div>
       <div className="flex-1">
-        <p className="font-semibold text-[#0f1923] mb-1">{title}</p>
+        <p className="font-semibold text-[#1a1a1a] mb-1">{title}</p>
         {children}
       </div>
     </div>
@@ -91,8 +91,8 @@ export function Step({ n, title, children }: { n: number; title: string; childre
 // ─── Section Heading ─────────────────────────────────────────────────────────
 export function SectionHeading({ icon, children }: { icon: ReactNode; children: ReactNode }) {
   return (
-    <h2 className="flex items-center gap-3 text-xl font-bold text-[#0f1923] mt-10 mb-4 pb-2 border-b-2 border-[#e63329]/20">
-      <span className="text-[#e63329]">{icon}</span>
+    <h2 className="flex items-center gap-3 text-xl font-bold text-[#1a1a1a] mt-10 mb-4 pb-2 border-b-2 border-[#e2241b]/25">
+      <span className="text-[#e2241b]">{icon}</span>
       {children}
     </h2>
   )
@@ -100,7 +100,7 @@ export function SectionHeading({ icon, children }: { icon: ReactNode; children: 
 
 // ─── Sub Heading ─────────────────────────────────────────────────────────────
 export function H3({ children }: { children: ReactNode }) {
-  return <h3 className="font-bold text-[#1a2e4a] text-base mt-6 mb-2">{children}</h3>
+  return <h3 className="font-bold text-[#1a1a1a] text-base mt-6 mb-2">{children}</h3>
 }
 
 // ─── Tabs ────────────────────────────────────────────────────────────────────
@@ -115,8 +115,8 @@ export function LocalTabs({ tabs, children }: { tabs: string[]; children: (activ
             onClick={() => setActive(t)}
             className={`px-4 py-1.5 rounded-lg text-sm font-semibold border transition-all duration-200 ${
               active === t
-                ? 'bg-[#e63329] text-white border-[#e63329] shadow-sm'
-                : 'bg-white text-[#0f1923] border-[#d1d9e0] hover:border-[#e63329] hover:text-[#e63329]'
+                ? 'bg-[#e2241b] text-white border-[#e2241b] shadow-sm'
+                : 'bg-white text-[#1a1a1a] border-[#f0d4d2] hover:border-[#e2241b] hover:text-[#e2241b]'
             }`}
           >
             {t}
@@ -137,10 +137,10 @@ export function DataTable({
   rows: (string | ReactNode)[][]
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-[#d1d9e0] my-4 shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-[#f0d4d2] my-4 shadow-sm">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-[#0f1923] text-white">
+          <tr className="bg-[#e2241b] text-white">
             {headers.map((h, i) => (
               <th key={i} className="text-left px-4 py-3 font-semibold">
                 {h}
@@ -150,9 +150,9 @@ export function DataTable({
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className={i % 2 === 1 ? 'bg-slate-50' : 'bg-white'}>
+            <tr key={i} className={i % 2 === 1 ? 'bg-red-50/40' : 'bg-white'}>
               {row.map((cell, j) => (
-                <td key={j} className="px-4 py-3 border-t border-[#d1d9e0] align-top">
+                <td key={j} className="px-4 py-3 border-t border-[#f0d4d2] align-top">
                   {cell}
                 </td>
               ))}
@@ -171,11 +171,11 @@ export function ArchFlow({ steps }: { steps: string[] }) {
       {steps.map((s, i) => (
         <div key={i}>
           <div
-            className="bg-white border border-[#d1d9e0] rounded-lg px-4 py-2.5 text-sm text-center hover:border-[#e63329]/40 transition-colors"
+            className="bg-white border border-[#f0d4d2] rounded-lg px-4 py-2.5 text-sm text-center hover:border-[#e2241b]/50 transition-colors"
             dangerouslySetInnerHTML={{ __html: s }}
           />
           {i < steps.length - 1 && (
-            <div className="text-[#e63329] text-xl text-center my-0.5 leading-none">↓</div>
+            <div className="text-[#e2241b] text-xl text-center my-0.5 leading-none">↓</div>
           )}
         </div>
       ))}
@@ -196,13 +196,13 @@ export function ScreenCard({
   children: ReactNode
 }) {
   return (
-    <div className="border border-[#d1d9e0] rounded-xl p-5 my-3 bg-white hover:shadow-md transition-shadow">
+    <div className="border border-[#f0d4d2] rounded-xl p-5 my-3 bg-white hover:shadow-md transition-shadow">
       <div className="flex items-start gap-3 mb-2">
-        <span className="w-7 h-7 rounded-full bg-[#e63329] text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+        <span className="w-7 h-7 rounded-full bg-[#e2241b] text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
           {num}
         </span>
         <div className="flex-1">
-          <h4 className="font-bold text-[#0f1923]">{title}</h4>
+          <h4 className="font-bold text-[#1a1a1a]">{title}</h4>
           <div className="mt-1">{access}</div>
         </div>
       </div>
@@ -260,7 +260,7 @@ export function ExampleBox({
           : 'border-l-4 border-l-red-500 border-slate-200 bg-red-50/40'
       }`}
     >
-      <p className="font-semibold text-[#0f1923] text-sm mb-1">{question}</p>
+      <p className="font-semibold text-[#1a1a1a] text-sm mb-1">{question}</p>
       <p className="text-xs text-[#6b7a8d]">{note}</p>
     </div>
   )

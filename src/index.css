@@ -4,12 +4,12 @@
 @theme {
   --font-sans: 'DM Sans', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
-  --color-brand: #e63329;
-  --color-brand-dark: #c41f15;
-  --color-ink: #0f1923;
-  --color-muted: #6b7a8d;
-  --color-surface: #f4f6f9;
-  --color-border: #d1d9e0;
+  --color-brand: #e2241b;
+  --color-brand-dark: #b3160f;
+  --color-ink: #1a1a1a;
+  --color-muted: #7a7a7a;
+  --color-surface: #ffffff;
+  --color-border: #f0d4d2;
 }
 
 html { scroll-behavior: smooth; }
@@ -40,4 +40,28 @@ body {
 .token-val { color: #a5d6ff; }
 .token-comment { color: #8b949e; }
 .token-string { color: #a8d1a8; }
+
+/* ── PDF / Print export styles ── */
+@media print {
+  .no-print { display: none !important; }
+
+  html, body { background: #fff !important; }
+  body { color: #000; }
+
+  /* Show every animated section regardless of scroll state */
+  .fade-up { opacity: 1 !important; transform: none !important; }
+
+  /* Let the printed content use the full page width */
+  main { max-width: 100% !important; padding: 0 !important; }
+  main > div { max-width: 100% !important; }
+
+  /* Wrap code blocks instead of clipping them */
+  pre { white-space: pre-wrap !important; word-break: break-word; }
+
+  /* Avoid awkward page breaks inside blocks */
+  table, pre, .fade-up > * { break-inside: avoid; }
+  h2, h3, h4 { break-after: avoid; }
+
+  @page { margin: 1.5cm; }
+}
 

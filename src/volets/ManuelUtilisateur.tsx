@@ -32,9 +32,9 @@ export default function ManuelUtilisateur() {
             { icon: <BookOpen size={20} />, title: 'Réponse sourcée', desc: 'Chaque réponse indique le document exact dont elle provient — vous pouvez toujours vérifier.' },
             { icon: <Mic size={20} />, title: 'Texte ou voix', desc: 'Tapez votre question ou utilisez le micro, selon ce qui vous convient le mieux.' },
           ].map(c => (
-            <div key={c.title} className="bg-white rounded-xl border border-[#d1d9e0] p-5 hover:border-[#e63329]/50 hover:shadow-md transition-all duration-200 group">
-              <div className="text-[#e63329] mb-3">{c.icon}</div>
-              <h3 className="font-bold text-[#0f1923] mb-1.5 group-hover:text-[#e63329] transition-colors text-sm">{c.title}</h3>
+            <div key={c.title} className="bg-white rounded-xl border border-[#f0d4d2] p-5 hover:border-[#e2241b]/50 hover:shadow-md transition-all duration-200 group">
+              <div className="text-[#e2241b] mb-3">{c.icon}</div>
+              <h3 className="font-bold text-[#1a1a1a] mb-1.5 group-hover:text-[#e2241b] transition-colors text-sm">{c.title}</h3>
               <p className="text-sm text-[#6b7a8d] leading-relaxed">{c.desc}</p>
             </div>
           ))}
@@ -93,12 +93,12 @@ export default function ManuelUtilisateur() {
         <p className="text-[#374151] leading-relaxed mb-3">
           Chaque réponse de KALATI s'accompagne d'une ou plusieurs <strong>sources</strong> : le nom du document exact dans lequel l'information a été trouvée.
         </p>
-        <div className="bg-white border border-[#d1d9e0] rounded-xl p-5 my-4 shadow-sm">
-          <p className="text-sm font-semibold text-[#0f1923] mb-2">Exemple de réponse</p>
+        <div className="bg-white border border-[#f0d4d2] rounded-xl p-5 my-4 shadow-sm">
+          <p className="text-sm font-semibold text-[#1a1a1a] mb-2">Exemple de réponse</p>
           <p className="text-sm text-[#374151] italic mb-3">"La Convention Collective prévoit que... [réponse détaillée]"</p>
           <div className="flex items-center gap-2 text-sm">
-            <span className="font-semibold text-[#0f1923]">Sources :</span>
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">Convention_Collective_CAMRAIL.pdf</span>
+            <span className="font-semibold text-[#1a1a1a]">Sources :</span>
+            <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-[#e2241b] border border-[#f0d4d2]">Convention_Collective_CAMRAIL.pdf</span>
           </div>
         </div>
         <Card variant="danger">
@@ -141,11 +141,11 @@ export default function ManuelUtilisateur() {
             ['Il peut se tromper', 'Comme tout système automatisé, vérifiez toujours une réponse importante via le document source.'],
             ['Il ne connaît que ce qui est indexé', 'Un document tout juste ajouté peut prendre quelques minutes avant d\'être pris en compte.'],
           ].map(([title, desc]) => (
-            <li key={title} className="flex items-start gap-3 text-sm bg-white border border-[#d1d9e0] rounded-xl p-4">
-              <span className="w-5 h-5 rounded-full bg-red-100 text-[#e63329] flex items-center justify-center flex-shrink-0 mt-0.5">
+            <li key={title} className="flex items-start gap-3 text-sm bg-white border border-[#f0d4d2] rounded-xl p-4">
+              <span className="w-5 h-5 rounded-full bg-red-100 text-[#e2241b] flex items-center justify-center flex-shrink-0 mt-0.5">
                 <ShieldOff size={11} />
               </span>
-              <span><strong className="text-[#0f1923]">{title}</strong> — <span className="text-[#6b7a8d]">{desc}</span></span>
+              <span><strong className="text-[#1a1a1a]">{title}</strong> — <span className="text-[#6b7a8d]">{desc}</span></span>
             </li>
           ))}
         </ul>
@@ -180,9 +180,9 @@ export default function ManuelUtilisateur() {
               a: 'Votre formateur pour les questions d\'usage, la Coordination Informatique pour les problèmes de compte ou d\'accès.',
             },
           ].map(({ q, a }) => (
-            <div key={q} className="bg-white border border-[#d1d9e0] rounded-xl p-5 hover:shadow-sm transition-shadow">
-              <h4 className="font-semibold text-[#0f1923] mb-2 flex items-start gap-2">
-                <HelpCircle size={16} className="text-[#e63329] flex-shrink-0 mt-0.5" />
+            <div key={q} className="bg-white border border-[#f0d4d2] rounded-xl p-5 hover:shadow-sm transition-shadow">
+              <h4 className="font-semibold text-[#1a1a1a] mb-2 flex items-start gap-2">
+                <HelpCircle size={16} className="text-[#e2241b] flex-shrink-0 mt-0.5" />
                 {q}
               </h4>
               <p className="text-sm text-[#6b7a8d] leading-relaxed pl-6">{a}</p>

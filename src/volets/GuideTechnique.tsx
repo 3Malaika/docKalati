@@ -37,9 +37,9 @@ export default function GuideTechnique() {
             { title: 'Backend', icon: <Server size={20} />, desc: 'FastAPI (Python 3.11). API REST sécurisée JWT, pipeline RAG hybride, multimodalité PDF.' },
             { title: 'Données', icon: <HardDrive size={20} />, desc: 'ChromaDB (vecteurs), SQLite (audit + utilisateurs), fichiers JSON (manifeste d\'accès).' },
           ].map(c => (
-            <div key={c.title} className="bg-white rounded-xl border border-[#d1d9e0] p-5 hover:border-[#e63329]/50 hover:shadow-md transition-all duration-200 group">
-              <div className="text-[#e63329] mb-3">{c.icon}</div>
-              <h3 className="font-bold text-[#0f1923] mb-1.5 group-hover:text-[#e63329] transition-colors">{c.title}</h3>
+            <div key={c.title} className="bg-white rounded-xl border border-[#f0d4d2] p-5 hover:border-[#e2241b]/50 hover:shadow-md transition-all duration-200 group">
+              <div className="text-[#e2241b] mb-3">{c.icon}</div>
+              <h3 className="font-bold text-[#1a1a1a] mb-1.5 group-hover:text-[#e2241b] transition-colors">{c.title}</h3>
               <p className="text-sm text-[#6b7a8d] leading-relaxed">{c.desc}</p>
             </div>
           ))}
@@ -55,10 +55,10 @@ export default function GuideTechnique() {
             ['Journal d\'audit', 'toutes les questions sont tracées dans SQLite'],
           ].map(([title, desc]) => (
             <li key={title} className="flex items-start gap-3 text-sm">
-              <span className="mt-1 w-4 h-4 rounded-full bg-[#e63329]/10 text-[#e63329] flex-shrink-0 flex items-center justify-center">
+              <span className="mt-1 w-4 h-4 rounded-full bg-[#e2241b]/10 text-[#e2241b] flex-shrink-0 flex items-center justify-center">
                 <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><path d="M7 1L3 6 1 4"/></svg>
               </span>
-              <span><strong className="text-[#0f1923]">{title}</strong> — <span className="text-[#6b7a8d]">{desc}</span></span>
+              <span><strong className="text-[#1a1a1a]">{title}</strong> — <span className="text-[#6b7a8d]">{desc}</span></span>
             </li>
           ))}
         </ul>
@@ -70,7 +70,7 @@ export default function GuideTechnique() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <H3>Flux d'une requête texte</H3>
-            <div className="bg-white rounded-xl border border-[#d1d9e0] p-4 shadow-sm">
+            <div className="bg-white rounded-xl border border-[#f0d4d2] p-4 shadow-sm">
               <ArchFlow steps={[
                 'Utilisateur tape une question',
                 'Frontend → <code class="text-xs bg-slate-100 px-1 rounded font-mono">POST /api/query</code>',
@@ -159,9 +159,9 @@ export default function GuideTechnique() {
             <div>
               <H3>Prérequis Windows</H3>
               <ul className="text-sm space-y-1 mb-4 text-[#374151]">
-                <li>• Python 3.11+ — <a href="https://python.org" className="text-[#e63329] underline underline-offset-2">python.org</a></li>
-                <li>• Node.js 20+ — <a href="https://nodejs.org" className="text-[#e63329] underline underline-offset-2">nodejs.org</a></li>
-                <li>• Git — <a href="https://git-scm.com" className="text-[#e63329] underline underline-offset-2">git-scm.com</a></li>
+                <li>• Python 3.11+ — <a href="https://python.org" className="text-[#e2241b] underline underline-offset-2">python.org</a></li>
+                <li>• Node.js 20+ — <a href="https://nodejs.org" className="text-[#e2241b] underline underline-offset-2">nodejs.org</a></li>
+                <li>• Git — <a href="https://git-scm.com" className="text-[#e2241b] underline underline-offset-2">git-scm.com</a></li>
                 <li>• ffmpeg (optionnel, améliore la transcription vocale)</li>
               </ul>
               <Step n={1} title="Cloner le repo"><CodeBlock code={`git clone https://github.com/votre-repo/kalati-rag.git\ncd kalati-rag`} /></Step>
@@ -205,7 +205,7 @@ export default function GuideTechnique() {
           {(active) => (
             <div>
               {active === 'Windows' && <>
-                <Step n={1} title="Télécharger et installer Ollama"><p className="text-sm text-[#6b7a8d]">Aller sur <a href="https://ollama.com/download" className="text-[#e63329] underline">ollama.com/download</a> → télécharger le <IC>.exe</IC> → l'installer.</p></Step>
+                <Step n={1} title="Télécharger et installer Ollama"><p className="text-sm text-[#6b7a8d]">Aller sur <a href="https://ollama.com/download" className="text-[#e2241b] underline">ollama.com/download</a> → télécharger le <IC>.exe</IC> → l'installer.</p></Step>
                 <Step n={2} title="Vérifier l'installation"><CodeBlock code={`ollama --version`} /></Step>
                 <Step n={3} title="Démarrer le serveur"><CodeBlock code={`ollama serve`} /><p className="text-sm text-[#6b7a8d] mt-1">Laisser ce terminal ouvert. Écoute sur <IC>http://localhost:11434</IC></p></Step>
               </>}
