@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Menu, X, Search, BookOpen, ChevronRight, Code2, ExternalLink, Download, FileText, FileType, Loader2 } from 'lucide-react'
+import { Menu, X, Search, BookOpen, ChevronRight, Code2, ExternalLink, Download, FileText, FileType, Loader2, Phone, Mail, GraduationCap } from 'lucide-react'
 import { exportPDF, exportDOCX } from './utils/exportDoc'
 import camrailLogo from './imports/camrail-removebg-preview-1786060006378.png'
 import GuideTechnique, { GUIDE_SECTIONS } from './volets/GuideTechnique'
@@ -261,6 +261,9 @@ export default function App() {
 
               {/* Bottom nav between documents */}
               <BottomNav activeTab={activeTab} onNavigate={handleTabChange} />
+
+              {/* About us */}
+              <AboutUs />
 
               <footer className="mt-10 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2 text-[13px] text-muted">
                 <span>KALATI RAG — Documentation technique · CAMRAIL</span>
