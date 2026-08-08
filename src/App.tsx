@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Menu, X, Search, BookOpen, ChevronRight, Code2, ExternalLink } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Menu, X, Search, BookOpen, ChevronRight, Code2, ExternalLink, Download, FileText, FileType, Loader2 } from 'lucide-react'
+import { exportPDF, exportDOCX } from './utils/exportDoc'
 import camrailLogo from './imports/camrail-removebg-preview-1786060006378.png'
 import GuideTechnique, { GUIDE_SECTIONS } from './volets/GuideTechnique'
 import ManuelUtilisateur, { MANUEL_SECTIONS } from './volets/ManuelUtilisateur'
@@ -49,6 +50,8 @@ export default function App() {
   const [scrollPct, setScrollPct] = useState(0)
   const [mobileNav, setMobileNav] = useState(false)
   const [query, setQuery] = useState('')
+
+  const contentRef = useRef<HTMLDivElement>(null)
 
   const currentTab = TABS.find(t => t.id === activeTab)!
 
@@ -238,15 +241,23 @@ export default function App() {
                   <ChevronRight size={13} />
                   <span className="text-brand font-medium">{currentTab.label}</span>
                 </div>
-                <h1 className="text-3xl font-bold tracking-tight text-balance">{currentTab.label}</h1>
-                <p className="mt-2 text-muted text-[15px]">{currentTab.subtitle}</p>
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                  <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-balance">{currentTab.label}</h1>
+                    <p className="mt-2 text-muted text-[15px]">{currentTab.subtitle}</p>
+                  </div>
+                  <ExportMenu contentRef={contentRef} title={currentTab.label} />
+                </div>
                 <div className="mt-5 h-px bg-gradient-to-r from-brand/40 via-border to-transparent" />
               </div>
 
-              {activeTab === 'guide'   && <GuideTechnique />}
-              {activeTab === 'manuel'  && <ManuelUtilisateur />}
-              {activeTab === 'rapport' && <RapportConception />}
-              {activeTab === 'tests'   && <TestRecette />}
+              {/* Exportable document body */}
+              <div ref={contentRef}>
+                {activeTab === 'guide'   && <GuideTechnique />}
+                {activeTab === 'manuel'  && <ManuelUtilisateur />}
+                {activeTab === 'rapport' && <RapportConception />}
+                {activeTab === 'tests'   && <TestRecette />}
+              </div>
 
               {/* Bottom nav between documents */}
               <BottomNav activeTab={activeTab} onNavigate={handleTabChange} />
@@ -261,6 +272,77 @@ export default function App() {
           </main>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ─── Export menu (PDF / DOCX) ──────────────────────────────────────────────────
+
+function ExportMenu({ contentRef, title }: { contentRef: React.RefObject<HTMLDivElement | null>; title: string }) {
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState<null | 'pdf' | 'docx'>(null)
+  const wrapRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [])
+
+  const run = async (fmt: 'pdf' | 'docx') => {
+    const root = contentRef.current
+    if (!root) return
+    setBusy(fmt)
+    setOpen(false)
+    try {
+      if (fmt === 'pdf') exportPDF(root, title)
+      else await exportDOCX(root, title)
+    } catch (err) {
+      console.error('[v0] export error', err)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <div ref={wrapRef} className="relative flex-shrink-0">
+      <button
+        onClick={() => setOpen(v => !v)}
+        disabled={busy !== null}
+        className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-brand text-white text-sm font-semibold shadow-sm shadow-brand/25 hover:bg-brand/90 disabled:opacity-60 transition-colors"
+      >
+        {busy ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+        {busy ? 'Export…' : 'Exporter'}
+        {!busy && <ChevronRight size={14} className={`transition-transform ${open ? 'rotate-90' : ''}`} />}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-52 rounded-xl border border-border bg-white shadow-lg overflow-hidden z-50">
+          <button
+            onClick={() => run('pdf')}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-brand/5 hover:text-brand transition-colors"
+          >
+            <FileText size={17} className="text-brand" />
+            <span>
+              <span className="block font-medium">Format PDF</span>
+              <span className="block text-[11px] text-muted">Document .pdf</span>
+            </span>
+          </button>
+          <div className="h-px bg-border" />
+          <button
+            onClick={() => run('docx')}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-brand/5 hover:text-brand transition-colors"
+          >
+            <FileType size={17} className="text-brand" />
+            <span>
+              <span className="block font-medium">Format Word</span>
+              <span className="block text-[11px] text-muted">Document .docx</span>
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   )
 }

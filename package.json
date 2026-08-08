@@ -1,5 +1,5 @@
 {
-  "name": "figma-make-app",
+  "name": "kalati-rag-docs",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -10,6 +10,8 @@
     "format": "oxfmt"
   },
   "dependencies": {
+    "docx": "^9.7.1",
+    "jspdf": "^4.2.1",
     "lucide-react": "^1.30.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
