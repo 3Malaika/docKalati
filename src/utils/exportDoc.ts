@@ -70,7 +70,28 @@ function extractBlocks(root: HTMLElement): Block[] {
           const src = img.getAttribute('src') || ''
           const alt = img.getAttribute('alt') || ''
           const figcap = child.querySelector('figcaption')?.textContent
-          if (src) blocks.push({ type: 'image', src, alt, caption: figcap })
+          if (src) {
+            // Convertir l'image en data URL si ce n'est pas déjà le cas
+            const processImage = async () => {
+              if (src.startsWith('data:')) {
+                blocks.push({ type: 'image', src, alt, caption: figcap })
+              } else {
+                try {
+                  const response = await fetch(src)
+                  const blob = await response.blob()
+                  const reader = new FileReader()
+                  reader.onload = (e) => {
+                    const dataUrl = e.target?.result as string
+                    blocks.push({ type: 'image', src: dataUrl, alt, caption: figcap })
+                  }
+                  reader.readAsDataURL(blob)
+                } catch (err) {
+                  blocks.push({ type: 'image', src, alt, caption: figcap })
+                }
+              }
+            }
+            processImage()
+          }
         }
       } else {
         walk(child)
@@ -118,226 +139,217 @@ const slug = (s: string) =>
 // PDF — jsPDF avec tableaux manuels (sans dépendance autoTable)
 // ═══════════════════════════════════════════════════════════════════════════════
 export function exportPDF(root: HTMLElement, title: string) {
-  const blocks = extractBlocks(root)
-  const doc = new jsPDF({ unit: 'pt', format: 'a4', compress: true })
+  // Attendre un peu pour laisser les images se convertir
+  setTimeout(() => {
+    const blocks = extractBlocks(root)
+    const doc = new jsPDF({ unit: 'pt', format: 'a4', compress: true })
 
-  const MX = 50, MT = 60, MB = 50
-  const PW = doc.internal.pageSize.getWidth()
-  const PH = doc.internal.pageSize.getHeight()
-  const CW = PW - MX * 2
-  let y = MT
+    const MX = 50, MT = 60, MB = 50
+    const PW = doc.internal.pageSize.getWidth()
+    const PH = doc.internal.pageSize.getHeight()
+    const CW = PW - MX * 2
+    let y = MT
 
-  // Helpers ──────────────────────────────────────────────────────────────────
-  const np = () => { doc.addPage(); y = MT }
-  const fit = (n: number) => { if (y + n > PH - MB) np() }
+    // Helpers ──────────────────────────────────────────────────────────────────
+    const np = () => { doc.addPage(); y = MT }
+    const fit = (n: number) => { if (y + n > PH - MB) np() }
 
-  /** Écriture de texte — toujours helvetica sauf si mono=true */
-  const write = (
-    text: string,
-    size: number,
-    bold = false,
-    color: RGB = R.body,
-    indent = 0,
-    gap = 6,
-    mono = false,
-  ) => {
-    doc.setFont(mono ? 'courier' : 'helvetica', bold ? 'bold' : 'normal')
-    doc.setFontSize(size)
-    doc.setTextColor(color[0], color[1], color[2])
-    const lh = size * 1.45
-    const lines: string[] = doc.splitTextToSize(text, CW - indent)
-    for (const ln of lines) { fit(lh); doc.text(ln, MX + indent, y); y += lh }
-    y += gap
-  }
-
-  // ── Bandeau titre ──────────────────────────────────────────────────────────
-  doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
-  doc.rect(0, 0, PW, 88, 'F')
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(255, 255, 255)
-  doc.text(title, MX, 50)
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(255, 200, 195)
-  doc.text('KALATI RAG — Documentation technique · CAMRAIL', MX, 70)
-  y = 108
-
-  // ── Fonction tableau manuel ────────────────────────────────────────────────
-  const drawTable = (headers: string[], rows: string[][]) => {
-    if (!headers.length && !rows.length) return
-    const allCols = headers.length || rows[0]?.length || 1
-
-    // Mesure largeurs de colonnes (distribution proportionnelle)
-    const colW = CW / allCols
-    const PADX = 6, PADY = 5
-    const FSIZE = 9, LH = FSIZE * 1.35
-
-    const measureRowH = (cells: string[], bold: boolean): number => {
-      doc.setFont('helvetica', bold ? 'bold' : 'normal')
-      doc.setFontSize(FSIZE)
-      let maxLines = 1
-      for (const cell of cells) {
-        const n = (doc.splitTextToSize(cell || ' ', colW - PADX * 2) as string[]).length
-        if (n > maxLines) maxLines = n
-      }
-      return maxLines * LH + PADY * 2
+    /** Écriture de texte — toujours helvetica sauf si mono=true */
+    const write = (
+      text: string,
+      size: number,
+      bold = false,
+      color: RGB = R.body,
+      indent = 0,
+      gap = 6,
+      mono = false,
+    ) => {
+      doc.setFont(mono ? 'courier' : 'helvetica', bold ? 'bold' : 'normal')
+      doc.setFontSize(size)
+      doc.setTextColor(color[0], color[1], color[2])
+      const lh = size * 1.45
+      const lines: string[] = doc.splitTextToSize(text, CW - indent)
+      for (const ln of lines) { fit(lh); doc.text(ln, MX + indent, y); y += lh }
+      y += gap
     }
 
-    const drawRow = (cells: string[], isHeader: boolean, stripe: boolean, ty: number) => {
-      const rh = measureRowH(cells, isHeader)
-      // Fond de ligne
-      if (isHeader) {
-        doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
-      } else if (stripe) {
-        doc.setFillColor(R.stripe[0], R.stripe[1], R.stripe[2])
-      } else {
-        doc.setFillColor(255, 255, 255)
-      }
-      doc.rect(MX, ty, CW, rh, 'F')
+    // ── Bandeau titre ──────────────────────────────────────────────────────────
+    doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
+    doc.rect(0, 0, PW, 88, 'F')
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(255, 255, 255)
+    doc.text(title, MX, 50)
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(255, 200, 195)
+    doc.text('KALATI RAG — Documentation technique · CAMRAIL', MX, 70)
+    y = 108
 
-      // Contenu + bordures cellules
-      for (let ci = 0; ci < allCols; ci++) {
-        const cx = MX + ci * colW
-        const cellTxt = cells[ci] ?? ''
-        // Bordure
-        doc.setDrawColor(R.border[0], R.border[1], R.border[2])
-        doc.setLineWidth(0.4)
-        doc.rect(cx, ty, colW, rh, 'S')
-        // Texte
-        doc.setFont('helvetica', isHeader ? 'bold' : 'normal')
+    // ── Fonction tableau manuel ────────────────────────────────────────────────
+    const drawTable = (headers: string[], rows: string[][]) => {
+      if (!headers.length && !rows.length) return
+      const allCols = headers.length || rows[0]?.length || 1
+
+      // Mesure largeurs de colonnes (distribution proportionnelle)
+      const colW = CW / allCols
+      const PADX = 6, PADY = 5
+      const FSIZE = 9, LH = FSIZE * 1.35
+
+      const measureRowH = (cells: string[], bold: boolean): number => {
+        doc.setFont('helvetica', bold ? 'bold' : 'normal')
         doc.setFontSize(FSIZE)
-        doc.setTextColor(
-          isHeader ? 255 : R.body[0],
-          isHeader ? 255 : R.body[1],
-          isHeader ? 255 : R.body[2],
-        )
-        const lines: string[] = doc.splitTextToSize(cellTxt || ' ', colW - PADX * 2)
-        let ty2 = ty + PADY + FSIZE * 0.9
-        for (const ln of lines) {
-          doc.text(ln, cx + PADX, ty2)
-          ty2 += LH
+        let maxLines = 1
+        for (const cell of cells) {
+          const n = (doc.splitTextToSize(cell || ' ', colW - PADX * 2) as string[]).length
+          if (n > maxLines) maxLines = n
         }
+        return maxLines * LH + PADY * 2
       }
-      return rh
-    }
 
-    y += 8
-    // Entête
-    if (headers.length) {
-      const rh = measureRowH(headers, true)
-      fit(rh)
-      drawRow(headers, true, false, y)
-      y += rh
-    }
-    // Corps
-    rows.forEach((row, ri) => {
-      const rh = measureRowH(row, false)
-      fit(rh)
-      drawRow(row, false, ri % 2 === 1, y)
-      y += rh
-    })
-    y += 10
-    // Remettre la police en état normal après le tableau
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(R.body[0], R.body[1], R.body[2])
-  }
-
-  // ── Boucle principale sur les blocs ───────────────────────────────────────
-  for (const b of blocks) {
-    switch (b.type) {
-
-      case 'heading': {
-        if (b.level === 1) {
-          y += 16; fit(36)
-          doc.setFillColor(R.surface[0], R.surface[1], R.surface[2])
-          doc.rect(MX, y - 16, CW, 30, 'F')
+      const drawRow = (cells: string[], isHeader: boolean, stripe: boolean, ty: number) => {
+        const rh = measureRowH(cells, isHeader)
+        // Fond de ligne
+        if (isHeader) {
           doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
-          doc.rect(MX, y - 16, 4, 30, 'F')
-          write(b.text, 14, true, R.brand, 12, 10)
-        } else if (b.level === 2) {
-          y += 10; fit(24)
-          write(b.text, 12, true, R.navy, 0, 3)
-          doc.setDrawColor(R.border[0], R.border[1], R.border[2])
-          doc.setLineWidth(0.5); doc.line(MX, y, MX + CW, y); y += 6
-        } else if (b.level === 3) {
-          y += 6; fit(18)
-          write(b.text, 11, true, R.navy, 0, 4)
+        } else if (stripe) {
+          doc.setFillColor(R.stripe[0], R.stripe[1], R.stripe[2])
         } else {
-          y += 3; fit(14)
-          write(b.text, 10, true, R.gray, 0, 3)
+          doc.setFillColor(255, 255, 255)
         }
-        break
-      }
+        doc.rect(MX, ty, CW, rh, 'F')
 
-      case 'paragraph':
-        write(b.text, 10, false, R.body, 0, 8)
-        break
-
-      case 'bullet': {
-        fit(18)
-        doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
-        doc.circle(MX + 5, y - 3, 2.2, 'F')
-        write(b.text, 10, false, R.body, 14, 3)
-        break
-      }
-
-      case 'code': {
-        y += 4
-        const cLines = b.text.split('\n')
-        const cLH = 8.5 * 1.4
-        const bH = cLines.length * cLH + 18
-        fit(Math.min(bH, PH - MB - MT))
-        doc.setFillColor(R.codebg[0], R.codebg[1], R.codebg[2])
-        doc.roundedRect(MX, y, CW, bH, 3, 3, 'F')
-        doc.setFont('courier', 'normal'); doc.setFontSize(8)
-        doc.setTextColor(R.codefg[0], R.codefg[1], R.codefg[2])
-        let cy = y + 13
-        for (const ln of cLines) {
-          if (cy + cLH > PH - MB) { np(); cy = MT }
-          doc.text(ln, MX + 10, cy); cy += cLH
+        // Contenu + bordures cellules
+        for (let ci = 0; ci < allCols; ci++) {
+          const cx = MX + ci * colW
+          const cellTxt = cells[ci] ?? ''
+          // Bordure
+          doc.setDrawColor(R.border[0], R.border[1], R.border[2])
+          doc.setLineWidth(0.4)
+          doc.rect(cx, ty, colW, rh, 'S')
+          // Texte
+          doc.setFont('helvetica', isHeader ? 'bold' : 'normal')
+          doc.setFontSize(FSIZE)
+          doc.setTextColor(
+            isHeader ? 255 : R.body[0],
+            isHeader ? 255 : R.body[1],
+            isHeader ? 255 : R.body[2],
+          )
+          const lines: string[] = doc.splitTextToSize(cellTxt || ' ', colW - PADX * 2)
+          let ty2 = ty + PADY + FSIZE * 0.9
+          for (const ln of lines) {
+            doc.text(ln, cx + PADX, ty2)
+            ty2 += LH
+          }
         }
-        y = cy + 6
-        // Remettre la police normale obligatoirement
-        doc.setFont('helvetica', 'normal')
-        doc.setTextColor(R.body[0], R.body[1], R.body[2])
-        break
+        return rh
       }
 
-      case 'table':
-        drawTable(b.headers, b.rows)
-        break
+      y += 8
+      // Entête
+      if (headers.length) {
+        const rh = measureRowH(headers, true)
+        fit(rh)
+        drawRow(headers, true, false, y)
+        y += rh
+      }
+      // Corps
+      rows.forEach((row, ri) => {
+        const rh = measureRowH(row, false)
+        fit(rh)
+        drawRow(row, false, ri % 2 === 1, y)
+        y += rh
+      })
+      y += 10
+      // Remettre la police en état normal après le tableau
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(R.body[0], R.body[1], R.body[2])
+    }
 
-      case 'image': {
-        // Images en PDF via URL/base64
-        try {
-          y += 8
-          
-          // Déterminer le type d'image pour utiliser le bon format
-          const isDataUrl = b.src.startsWith('data:')
-          const imageType = b.src.includes('.png') || b.src.startsWith('data:image/png') ? 'PNG' : 'JPEG'
-          
-          // Créer une image pour obtenir les dimensions réelles
-          const img = new Image()
-          
-          // Événement de succès
-          img.onload = () => {
-            const naturalW = img.naturalWidth || 800
-            const naturalH = img.naturalHeight || 600
-            const imgRatio = naturalH / naturalW
+    // ── Boucle principale sur les blocs ───────────────────────────────────────
+    for (const b of blocks) {
+      switch (b.type) {
+
+        case 'heading': {
+          if (b.level === 1) {
+            y += 16; fit(36)
+            doc.setFillColor(R.surface[0], R.surface[1], R.surface[2])
+            doc.rect(MX, y - 16, CW, 30, 'F')
+            doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
+            doc.rect(MX, y - 16, 4, 30, 'F')
+            write(b.text, 14, true, R.brand, 12, 10)
+          } else if (b.level === 2) {
+            y += 10; fit(24)
+            write(b.text, 12, true, R.navy, 0, 3)
+            doc.setDrawColor(R.border[0], R.border[1], R.border[2])
+            doc.setLineWidth(0.5); doc.line(MX, y, MX + CW, y); y += 6
+          } else if (b.level === 3) {
+            y += 6; fit(18)
+            write(b.text, 11, true, R.navy, 0, 4)
+          } else {
+            y += 3; fit(14)
+            write(b.text, 10, true, R.gray, 0, 3)
+          }
+          break
+        }
+
+        case 'paragraph':
+          write(b.text, 10, false, R.body, 0, 8)
+          break
+
+        case 'bullet': {
+          fit(18)
+          doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
+          doc.circle(MX + 5, y - 3, 2.2, 'F')
+          write(b.text, 10, false, R.body, 14, 3)
+          break
+        }
+
+        case 'code': {
+          y += 4
+          const cLines = b.text.split('\n')
+          const cLH = 8.5 * 1.4
+          const bH = cLines.length * cLH + 18
+          fit(Math.min(bH, PH - MB - MT))
+          doc.setFillColor(R.codebg[0], R.codebg[1], R.codebg[2])
+          doc.roundedRect(MX, y, CW, bH, 3, 3, 'F')
+          doc.setFont('courier', 'normal'); doc.setFontSize(8)
+          doc.setTextColor(R.codefg[0], R.codefg[1], R.codefg[2])
+          let cy = y + 13
+          for (const ln of cLines) {
+            if (cy + cLH > PH - MB) { np(); cy = MT }
+            doc.text(ln, MX + 10, cy); cy += cLH
+          }
+          y = cy + 6
+          // Remettre la police normale obligatoirement
+          doc.setFont('helvetica', 'normal')
+          doc.setTextColor(R.body[0], R.body[1], R.body[2])
+          break
+        }
+
+        case 'table':
+          drawTable(b.headers, b.rows)
+          break
+
+        case 'image': {
+          // Images en PDF via data URL
+          try {
+            y += 8
             
-            // Adapter la largeur en fonction de la dimension réelle
-            let imgW = CW * 0.8 // largeur par défaut
-            if (naturalW < 600) {
-              imgW = CW * 0.5 // petites images : 50% de la largeur
-            } else if (naturalW < 1000) {
-              imgW = CW * 0.65 // images moyennes : 65%
-            }
-            // sinon : images grandes/larges : 80%
+            // Déterminer le type d'image
+            const imageType = b.src.includes('.png') || b.src.startsWith('data:image/png') ? 'PNG' : 'JPEG'
             
-            const imgH = imgW * imgRatio // hauteur calculée selon le vrai ratio
+            // Largeur fixe pour les images : 70% de la largeur utile
+            const imgW = CW * 0.7
+            const imgH = imgW * 0.6 // ratio d'aspect approximatif
             
             fit(imgH + 30)
             // Centrer horizontalement
             const xPos = MX + (CW - imgW) / 2
-            doc.addImage(b.src, imageType, xPos, y, imgW, imgH)
-            y += imgH + 10
+            
+            try {
+              doc.addImage(b.src, imageType, xPos, y, imgW, imgH)
+              y += imgH + 10
+            } catch (e) {
+              // Si l'image échoue, afficher un placeholder
+              write(`[Image non disponible : ${b.alt}]`, 9, false, R.gray, 0, 6)
+            }
             
             if (b.caption) {
               doc.setFont('helvetica', 'italic'); doc.setFontSize(8)
@@ -348,53 +360,45 @@ export function exportPDF(root: HTMLElement, title: string) {
             y += 4
             doc.setFont('helvetica', 'normal')
             doc.setTextColor(R.body[0], R.body[1], R.body[2])
-          }
-          
-          // Événement d'erreur
-          img.onerror = () => {
+          } catch (e) {
             write(`[Image non disponible : ${b.alt}]`, 9, false, R.gray, 0, 6)
           }
-          
-          // Charger l'image
-          img.src = b.src
-        } catch (e) {
-          write(`[Image non disponible : ${b.alt}]`, 9, false, R.gray, 0, 6)
+          break
         }
-        break
       }
     }
-  }
 
-  // ── Section recommandation de stage ───────────────────────────────────────
-  y += 24; fit(200)
-  doc.setFillColor(R.navy[0], R.navy[1], R.navy[2])
-  doc.rect(MX, y, CW, 30, 'F')
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(255, 255, 255)
-  doc.text(REC_TITLE, MX + 10, y + 20)
-  y += 38
+    // ── Section recommandation de stage ───────────────────────────────────────
+    y += 24; fit(200)
+    doc.setFillColor(R.navy[0], R.navy[1], R.navy[2])
+    doc.rect(MX, y, CW, 30, 'F')
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(255, 255, 255)
+    doc.text(REC_TITLE, MX + 10, y + 20)
+    y += 38
 
-  write(REC_INTRO, 10, false, R.body, 0, 8)
-  write(REC_BODY,  10, true,  R.ink,  0, 10)
+    write(REC_INTRO, 10, false, R.body, 0, 8)
+    write(REC_BODY,  10, true,  R.ink,  0, 10)
 
-  for (const line of REC_CONTACTS) {
-    fit(18)
-    doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
-    doc.circle(MX + 5, y - 3, 2.2, 'F')
-    write(line, 10, false, R.body, 14, 4)
-  }
+    for (const line of REC_CONTACTS) {
+      fit(18)
+      doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
+      doc.circle(MX + 5, y - 3, 2.2, 'F')
+      write(line, 10, false, R.body, 14, 4)
+    }
 
-  // ── Pied de page numéroté ─────────────────────────────────────────────────
-  const total = doc.getNumberOfPages()
-  for (let p = 1; p <= total; p++) {
-    doc.setPage(p)
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8)
-    doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
-    doc.text(`KALATI RAG — ${title}  ·  Page ${p} / ${total}`, PW / 2, PH - 20, { align: 'center' })
-    doc.setDrawColor(R.border[0], R.border[1], R.border[2])
-    doc.setLineWidth(0.4); doc.line(MX, PH - 30, PW - MX, PH - 30)
-  }
+    // ── Pied de page numéroté ─────────────────────────────────────────────────
+    const total = doc.getNumberOfPages()
+    for (let p = 1; p <= total; p++) {
+      doc.setPage(p)
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8)
+      doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
+      doc.text(`KALATI RAG — ${title}  ·  Page ${p} / ${total}`, PW / 2, PH - 20, { align: 'center' })
+      doc.setDrawColor(R.border[0], R.border[1], R.border[2])
+      doc.setLineWidth(0.4); doc.line(MX, PH - 30, PW - MX, PH - 30)
+    }
 
-  doc.save(`${slug(title)}.pdf`)
+    doc.save(`${slug(title)}.pdf`)
+  }, 500)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
