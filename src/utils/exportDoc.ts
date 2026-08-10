@@ -34,6 +34,7 @@ type Block =
   | { type: 'code'; text: string }
   | { type: 'table'; headers: string[]; rows: string[][] }
   | { type: 'image'; src: string; alt: string; caption?: string; width: number; height: number }
+  | { type: 'separator'; }
 
 const clean = (s: string | null | undefined) =>
   (s ?? '').replace(/\s+/g, ' ').trim()
@@ -43,11 +44,9 @@ function loadImage(src: string): Promise<{ dataUrl: string; width: number; heigh
     const img = new Image()
     
     img.onload = () => {
-      // Si c'est déjà une data URL, l'utiliser directement
       if (src.startsWith('data:')) {
         resolve({ dataUrl: src, width: img.naturalWidth, height: img.naturalHeight })
       } else {
-        // Convertir en data URL via canvas
         const canvas = document.createElement('canvas')
         canvas.width = img.naturalWidth
         canvas.height = img.naturalHeight
@@ -73,21 +72,36 @@ async function extractBlocks(root: HTMLElement): Promise<Block[]> {
   const walk = async (node: Element) => {
     for (const child of Array.from(node.children)) {
       const tag = child.tagName.toLowerCase()
-      if (tag === 'button' || tag === 'svg' || tag === 'path') continue
+      
+      // Ignorer les éléments de présentation
+      if (tag === 'button' || tag === 'svg' || tag === 'path' || tag === 'script' || tag === 'style') continue
+      
+      const classList = child.className || ''
+      const id = child.id || ''
+      if (classList.includes('fixed') || classList.includes('absolute') || classList.includes('hidden') || 
+          id.includes('nav') || id.includes('menu') || classList.includes('sidebar')) {
+        continue
+      }
+      
       if (/^h[1-4]$/.test(tag)) {
-        const text = clean(child.textContent)
-        if (text) blocks.push({ type: 'heading', level: +tag[1] as 1|2|3|4, text })
+        const text = clean(Array.from(child.childNodes)
+          .filter(n => n.nodeType === 3)
+          .map(n => n.textContent)
+          .join('') || child.textContent)
+        if (text && text.length > 0) {
+          blocks.push({ type: 'heading', level: +tag[1] as 1|2|3|4, text })
+        }
       } else if (tag === 'p') {
         const text = clean(child.textContent)
-        if (text) blocks.push({ type: 'paragraph', text })
+        if (text && text.length > 0) blocks.push({ type: 'paragraph', text })
       } else if (tag === 'ul' || tag === 'ol') {
         for (const li of Array.from(child.querySelectorAll(':scope > li'))) {
           const text = clean(li.textContent)
-          if (text) blocks.push({ type: 'bullet', text })
+          if (text && text.length > 0) blocks.push({ type: 'bullet', text })
         }
       } else if (tag === 'pre') {
         const text = (child.textContent ?? '').replace(/\s+$/, '')
-        if (text.trim()) blocks.push({ type: 'code', text })
+        if (text.trim() && text.trim().length > 0) blocks.push({ type: 'code', text })
       } else if (tag === 'table') {
         const headers = Array.from(child.querySelectorAll('thead th')).map(th => clean(th.textContent))
         const rows = Array.from(child.querySelectorAll('tbody tr')).map(tr =>
@@ -100,17 +114,18 @@ async function extractBlocks(root: HTMLElement): Promise<Block[]> {
           const src = img.getAttribute('src') || ''
           const alt = img.getAttribute('alt') || ''
           const figcap = child.querySelector('figcaption')?.textContent
-          if (src) {
+          // Ignorer les images SVG/vecteur
+          if (src && !src.includes('.svg')) {
             try {
-              // Charger l'image et obtenir ses dimensions
               const { dataUrl, width, height } = await loadImage(src)
               blocks.push({ type: 'image', src: dataUrl, alt, caption: figcap, width, height })
             } catch (err) {
               console.error('Erreur chargement image:', err)
-              blocks.push({ type: 'image', src, alt, caption: figcap, width: 800, height: 600 })
             }
           }
         }
+      } else if (tag === 'hr' || classList.includes('border') || classList.includes('h-px')) {
+        blocks.push({ type: 'separator' })
       } else {
         await walk(child)
       }
@@ -121,19 +136,18 @@ async function extractBlocks(root: HTMLElement): Promise<Block[]> {
   return blocks
 }
 
-// ── Textes recommandation de stage ───────────────────────────────────────────
+// ── Textes stage ───────────────────────────────────────────────────────────────
 const REC_TITLE = 'Demande de Stage — 6 mois à partir de mars'
 const REC_INTRO =
-  "KALATI RAG est une application développée dans le cadre de ma scolarité en tant que " +
-  "projet académique en informatique. Afin de valider ma 5ème année et de consolider mes " +
-  "compétences en développement logiciel, une période de stage de 6 mois est obligatoire " +
-  "dans mon cursus d'ingénieur."
+  "KALATI RAG a été développée en tant que participation au concours informatique lancé par CAMRAIL. " +
+  "Ce projet m'a permis de mettre en pratique mes connaissances en architecture logicielle, développement " +
+  "full-stack et gestion de données complexes. Afin de valider ma 5ème année de cycle ingénieur, " +
+  "une période de stage de 6 mois est requise dans mon cursus académique."
 const REC_BODY =
-  "Je serais ravi d'avoir l'opportunité de réaliser ce stage au sein de votre organisation " +
-  "à partir de mars. Ce projet m'a permis de développer une expérience pratique en " +
-  "architecture logicielle, intégration d'APIs, et gestion de données. Je serais " +
-  "enthousiaste de mettre ces compétences au service de vos projets et d'apprendre " +
-  "des pratiques professionnelles en environnement réel."
+  "Je souhaite respectueusement proposer de réaliser ce stage obligatoire au sein de CAMRAIL à partir de mars. " +
+  "Cette expérience pratique au sein de votre organisation me permettrait de consolider les compétences " +
+  "développées lors de ce concours et d'apprendre les meilleures pratiques en environnement professionnel. " +
+  "Je serais enthousiaste de contribuer aux projets de CAMRAIL tout en poursuivant mon apprentissage ingénieur."
 const REC_CONTACTS = [
   "Téléphone : 696 784 809",
   "Email     : babouma.suzanne@saintjeaningenieur.org",
@@ -154,303 +168,258 @@ const slug = (s: string) =>
    .replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// PDF — jsPDF avec tableaux manuels (sans dépendance autoTable)
+// PDF — Reproduction fidèle du design HTML
 // ═══════════════════════════════════════════════════════════════════════════════
 export async function exportPDF(root: HTMLElement, title: string) {
   const blocks = await extractBlocks(root)
-    const doc = new jsPDF({ unit: 'pt', format: 'a4', compress: true })
+  const doc = new jsPDF({ unit: 'pt', format: 'a4', compress: true })
 
-    const MX = 50, MT = 60, MB = 50
-    const PW = doc.internal.pageSize.getWidth()
-    const PH = doc.internal.pageSize.getHeight()
-    const CW = PW - MX * 2
-    let y = MT
+  const MX = 40, MT = 60, MB = 50
+  const PW = doc.internal.pageSize.getWidth()
+  const PH = doc.internal.pageSize.getHeight()
+  const CW = PW - MX * 2
+  let y = MT
 
-    // Helpers ──────────────────────────────────────────────────────────────────
-    const np = () => { doc.addPage(); y = MT }
-    const fit = (n: number) => { if (y + n > PH - MB) np() }
+  // Helpers
+  const np = () => { doc.addPage(); y = MT }
+  const fit = (n: number) => { if (y + n > PH - MB) np() }
 
-    /** Écriture de texte — toujours helvetica sauf si mono=true */
-    const write = (
-      text: string,
-      size: number,
-      bold = false,
-      color: RGB = R.body,
-      indent = 0,
-      gap = 6,
-      mono = false,
-    ) => {
-      doc.setFont(mono ? 'courier' : 'helvetica', bold ? 'bold' : 'normal')
-      doc.setFontSize(size)
-      doc.setTextColor(color[0], color[1], color[2])
-      const lh = size * 1.45
-      const lines: string[] = doc.splitTextToSize(text, CW - indent)
-      for (const ln of lines) { fit(lh); doc.text(ln, MX + indent, y); y += lh }
-      y += gap
-    }
+  // Écriture de texte
+  const write = (
+    text: string,
+    size: number,
+    bold = false,
+    color: RGB = R.body,
+    indent = 0,
+    gap = 6,
+  ) => {
+    doc.setFont('helvetica', bold ? 'bold' : 'normal')
+    doc.setFontSize(size)
+    doc.setTextColor(color[0], color[1], color[2])
+    const lh = size * 1.45
+    const lines: string[] = doc.splitTextToSize(text, CW - indent)
+    for (const ln of lines) { fit(lh); doc.text(ln, MX + indent, y); y += lh }
+    y += gap
+  }
 
-    // ── Bandeau titre ──────────────────────────────────────────────────────────
-    doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
-    doc.rect(0, 0, PW, 88, 'F')
+  // Bandeau titre
+  doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
+  doc.rect(0, 0, PW, 88, 'F')
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(24); doc.setTextColor(255, 255, 255)
+  doc.text(title, MX, 50)
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(255, 200, 195)
+  doc.text('KALATI RAG — Documentation technique · CAMRAIL', MX, 70)
+  y = 108
+
+  // Boucle principale
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i]
     
-    // Ajouter le logo CAMRAIL (si disponible dans les blocs)
-    const logoBlock = blocks.find(b => b.type === 'image' && b.alt?.includes('CAMRAIL'))
-    if (logoBlock && logoBlock.type === 'image') {
-      try {
-        // Logo agrandi : 35pt de hauteur
-        const logoH = 35
-        const logoW = logoH * (logoBlock.width / logoBlock.height)
-        doc.addImage(logoBlock.src, 'PNG', MX, 10, logoW, logoH)
-      } catch (e) {
-        // Ignorer les erreurs de logo
-      }
-    }
-    
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(255, 255, 255)
-    doc.text(title, MX + (logoBlock ? 50 : 0), 50)
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(255, 200, 195)
-    doc.text('KALATI RAG — Documentation technique · CAMRAIL', MX + (logoBlock ? 50 : 0), 70)
-    y = 108
-
-    // ── Fonction tableau manuel ────────────────────────────────────────────────
-    const drawTable = (headers: string[], rows: string[][]) => {
-      if (!headers.length && !rows.length) return
-      const allCols = headers.length || rows[0]?.length || 1
-
-      // Mesure largeurs de colonnes (distribution proportionnelle)
-      const colW = CW / allCols
-      const PADX = 6, PADY = 5
-      const FSIZE = 9, LH = FSIZE * 1.35
-
-      const measureRowH = (cells: string[], bold: boolean): number => {
-        doc.setFont('helvetica', bold ? 'bold' : 'normal')
-        doc.setFontSize(FSIZE)
-        let maxLines = 1
-        for (const cell of cells) {
-          const n = (doc.splitTextToSize(cell || ' ', colW - PADX * 2) as string[]).length
-          if (n > maxLines) maxLines = n
-        }
-        return maxLines * LH + PADY * 2
-      }
-
-      const drawRow = (cells: string[], isHeader: boolean, stripe: boolean, ty: number) => {
-        const rh = measureRowH(cells, isHeader)
-        // Fond de ligne
-        if (isHeader) {
+    switch (b.type) {
+      case 'heading': {
+        if (b.level === 1) {
+          y += 12; fit(40)
+          doc.setFillColor(R.surface[0], R.surface[1], R.surface[2])
+          doc.rect(MX, y - 12, CW, 28, 'F')
           doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
-        } else if (stripe) {
-          doc.setFillColor(R.stripe[0], R.stripe[1], R.stripe[2])
-        } else {
-          doc.setFillColor(255, 255, 255)
-        }
-        doc.rect(MX, ty, CW, rh, 'F')
-
-        // Contenu + bordures cellules
-        for (let ci = 0; ci < allCols; ci++) {
-          const cx = MX + ci * colW
-          const cellTxt = cells[ci] ?? ''
-          // Bordure
+          doc.rect(MX, y - 12, 4, 28, 'F')
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(R.brand[0], R.brand[1], R.brand[2])
+          doc.text(b.text, MX + 10, y + 5)
+          y += 20
+        } else if (b.level === 2) {
+          y += 8; fit(22)
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(R.navy[0], R.navy[1], R.navy[2])
+          doc.text(b.text, MX, y)
+          y += 12
           doc.setDrawColor(R.border[0], R.border[1], R.border[2])
-          doc.setLineWidth(0.4)
-          doc.rect(cx, ty, colW, rh, 'S')
-          // Texte
-          doc.setFont('helvetica', isHeader ? 'bold' : 'normal')
-          doc.setFontSize(FSIZE)
-          doc.setTextColor(
-            isHeader ? 255 : R.body[0],
-            isHeader ? 255 : R.body[1],
-            isHeader ? 255 : R.body[2],
-          )
-          const lines: string[] = doc.splitTextToSize(cellTxt || ' ', colW - PADX * 2)
-          let ty2 = ty + PADY + FSIZE * 0.9
-          for (const ln of lines) {
-            doc.text(ln, cx + PADX, ty2)
-            ty2 += LH
-          }
+          doc.setLineWidth(0.4); doc.line(MX, y, MX + CW, y); y += 6
+        } else if (b.level === 3) {
+          y += 4; fit(16)
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(R.navy[0], R.navy[1], R.navy[2])
+          doc.text(b.text, MX, y)
+          y += 10
+        } else {
+          y += 2; fit(12)
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
+          doc.text(b.text, MX, y)
+          y += 8
         }
-        return rh
+        break
       }
 
-      y += 8
-      // Entête
-      if (headers.length) {
-        const rh = measureRowH(headers, true)
-        fit(rh)
-        drawRow(headers, true, false, y)
-        y += rh
+      case 'paragraph': {
+        write(b.text, 10, false, R.body, 0, 8)
+        break
       }
-      // Corps
-      rows.forEach((row, ri) => {
-        const rh = measureRowH(row, false)
-        fit(rh)
-        drawRow(row, false, ri % 2 === 1, y)
-        y += rh
-      })
-      y += 10
-      // Remettre la police en état normal après le tableau
-      doc.setFont('helvetica', 'normal')
-      doc.setTextColor(R.body[0], R.body[1], R.body[2])
-    }
 
-    // ── Boucle principale sur les blocs ───────────────────────────────────────
-    for (const b of blocks) {
-      switch (b.type) {
-
-        case 'heading': {
-          if (b.level === 1) {
-            y += 16; fit(36)
-            doc.setFillColor(R.surface[0], R.surface[1], R.surface[2])
-            doc.rect(MX, y - 16, CW, 30, 'F')
-            doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
-            doc.rect(MX, y - 16, 4, 30, 'F')
-            write(b.text, 14, true, R.brand, 12, 10)
-          } else if (b.level === 2) {
-            y += 10; fit(24)
-            write(b.text, 12, true, R.navy, 0, 3)
-            doc.setDrawColor(R.border[0], R.border[1], R.border[2])
-            doc.setLineWidth(0.5); doc.line(MX, y, MX + CW, y); y += 6
-          } else if (b.level === 3) {
-            y += 6; fit(18)
-            write(b.text, 11, true, R.navy, 0, 4)
+      case 'bullet': {
+        fit(16)
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(R.body[0], R.body[1], R.body[2])
+        const lines: string[] = doc.splitTextToSize(b.text, CW - 10)
+        let isFirst = true
+        for (const ln of lines) {
+          if (isFirst) {
+            doc.text('• ' + ln, MX + 5, y)
+            isFirst = false
           } else {
-            y += 3; fit(14)
-            write(b.text, 10, true, R.gray, 0, 3)
+            doc.text(ln, MX + 10, y)
           }
-          break
+          y += 10
         }
+        y += 2
+        break
+      }
 
-        case 'paragraph':
-          write(b.text, 10, false, R.body, 0, 8)
-          break
-
-        case 'bullet': {
-          fit(18)
-          doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
-          doc.circle(MX + 5, y - 3, 2.2, 'F')
-          write(b.text, 10, false, R.body, 14, 3)
-          break
+      case 'code': {
+        y += 4
+        const cLines = b.text.split('\n')
+        const cLH = 8
+        doc.setFont('courier', 'normal'); doc.setFontSize(8); doc.setTextColor(R.body[0], R.body[1], R.body[2])
+        for (const ln of cLines) {
+          fit(cLH)
+          doc.text(ln, MX + 5, y)
+          y += cLH
         }
+        y += 6
+        break
+      }
 
-        case 'code': {
-          y += 4
-          const cLines = b.text.split('\n')
-          const cLH = 8.5 * 1.4
-          const bH = cLines.length * cLH + 18
-          fit(Math.min(bH, PH - MB - MT))
-          doc.setFillColor(R.codebg[0], R.codebg[1], R.codebg[2])
-          doc.roundedRect(MX, y, CW, bH, 3, 3, 'F')
-          doc.setFont('courier', 'normal'); doc.setFontSize(8)
-          doc.setTextColor(R.codefg[0], R.codefg[1], R.codefg[2])
-          let cy = y + 13
-          for (const ln of cLines) {
-            if (cy + cLH > PH - MB) { np(); cy = MT }
-            doc.text(ln, MX + 10, cy); cy += cLH
+      case 'table': {
+        y += 4
+        const colCount = b.headers.length || b.rows[0]?.length || 1
+        const colW = CW / colCount
+        const FSIZE = 8, PADX = 3, PADY = 3, LH = FSIZE * 1.2
+        
+        const measureH = (text: string): number => {
+          doc.setFontSize(FSIZE)
+          const lines = doc.splitTextToSize(text, colW - PADX * 2)
+          return lines.length * LH + PADY * 2
+        }
+        
+        // Entête
+        if (b.headers.length) {
+          const rh = Math.max(...b.headers.map(measureH), LH + PADY * 2)
+          fit(rh)
+          for (let ci = 0; ci < colCount; ci++) {
+            const cx = MX + ci * colW
+            doc.setFillColor(R.border[0], R.border[1], R.border[2])
+            doc.rect(cx, y, colW, rh, 'F')
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(FSIZE); doc.setTextColor(R.body[0], R.body[1], R.body[2])
+            const lines = doc.splitTextToSize(b.headers[ci] || '', colW - PADX * 2)
+            let ty = y + PADY + FSIZE * 0.8
+            for (const ln of lines) {
+              doc.text(ln, cx + PADX, ty)
+              ty += LH
+            }
+            doc.setDrawColor(R.border[0], R.border[1], R.border[2])
+            doc.setLineWidth(0.2); doc.rect(cx, y, colW, rh, 'S')
           }
-          y = cy + 6
-          // Remettre la police normale obligatoirement
-          doc.setFont('helvetica', 'normal')
-          doc.setTextColor(R.body[0], R.body[1], R.body[2])
-          break
+          y += rh
         }
-
-        case 'table':
-          drawTable(b.headers, b.rows)
-          break
-
-        case 'image': {
-          // Images en PDF avec dimensionnement intelligent basé sur le ratio
-          try {
-            y += 8
-            
-            // Déterminer le type d'image
-            const imageType = b.src.includes('.png') || b.src.startsWith('data:image/png') ? 'PNG' : 'JPEG'
-            
-            // Calculer les dimensions en fonction du rapport d'aspect
-            const ratio = b.height / b.width
-            const isSquare = Math.abs(ratio - 1) < 0.15 // ±15% considéré comme carré
-            const isPortrait = ratio > 1.3
-            const isLandscape = ratio < 0.7
-            
-            let imgW: number
-            if (isSquare) {
-              // Carré : 45% de la largeur
-              imgW = CW * 0.45
-            } else if (isPortrait) {
-              // Portrait : 35% pour ne pas être trop grand
-              imgW = CW * 0.35
-            } else if (isLandscape) {
-              // Paysage : 90% pour exploiter la largeur
-              imgW = CW * 0.9
-            } else {
-              // Légèrement rectangle : 70%
-              imgW = CW * 0.7
+        
+        // Corps
+        b.rows.forEach((row, ri) => {
+          const rh = Math.max(...row.map(measureH), LH + PADY * 2)
+          fit(rh)
+          for (let ci = 0; ci < colCount; ci++) {
+            const cx = MX + ci * colW
+            if (ri % 2 === 1) {
+              doc.setFillColor(R.stripe[0], R.stripe[1], R.stripe[2])
+              doc.rect(cx, y, colW, rh, 'F')
             }
-            
-            const imgH = imgW * ratio
-            
-            fit(imgH + 30)
-            // Centrer horizontalement
-            const xPos = MX + (CW - imgW) / 2
-            
-            try {
-              doc.addImage(b.src, imageType, xPos, y, imgW, imgH)
-              y += imgH + 10
-            } catch (e) {
-              // Si l'image échoue, afficher un placeholder
-              write(`[Image non disponible : ${b.alt}]`, 9, false, R.gray, 0, 6)
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(FSIZE); doc.setTextColor(R.body[0], R.body[1], R.body[2])
+            const lines = doc.splitTextToSize(row[ci] || '', colW - PADX * 2)
+            let ty = y + PADY + FSIZE * 0.8
+            for (const ln of lines) {
+              doc.text(ln, cx + PADX, ty)
+              ty += LH
             }
-            
-            if (b.caption) {
-              doc.setFont('helvetica', 'italic'); doc.setFontSize(8)
-              doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
-              const lines: string[] = doc.splitTextToSize(b.caption, imgW)
-              for (const ln of lines) { doc.text(ln, xPos, y); y += 10 }
-            }
-            y += 4
-            doc.setFont('helvetica', 'normal')
-            doc.setTextColor(R.body[0], R.body[1], R.body[2])
-          } catch (e) {
-            write(`[Image non disponible : ${b.alt}]`, 9, false, R.gray, 0, 6)
+            doc.setDrawColor(R.border[0], R.border[1], R.border[2])
+            doc.setLineWidth(0.2); doc.rect(cx, y, colW, rh, 'S')
           }
-          break
+          y += rh
+        })
+        y += 6
+        break
+      }
+
+      case 'image': {
+        y += 6
+        const ratio = b.height / b.width
+        let imgW = CW * 0.7
+        if (Math.abs(ratio - 1) < 0.15) imgW = CW * 0.5
+        else if (ratio > 1.3) imgW = CW * 0.4
+        else if (ratio < 0.7) imgW = CW * 0.85
+        
+        const imgH = imgW * ratio
+        fit(imgH + 15)
+        const xPos = MX + (CW - imgW) / 2
+        
+        try {
+          doc.addImage(b.src, 'PNG', xPos, y, imgW, imgH)
+          y += imgH + 6
+          if (b.caption) {
+            doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
+            const lines = doc.splitTextToSize(b.caption, imgW)
+            for (const ln of lines) {
+              doc.text(ln, xPos, y)
+              y += 10
+            }
+          }
+        } catch (e) {
+          write(`[Image: ${b.alt}]`, 9, false, R.gray, 0, 6)
         }
+        y += 4
+        break
+      }
+
+      case 'separator': {
+        y += 4
+        fit(8)
+        doc.setDrawColor(R.border[0], R.border[1], R.border[2])
+        doc.setLineWidth(0.3)
+        doc.line(MX, y, MX + CW, y)
+        y += 8
+        break
       }
     }
+  }
 
-    // ── Section recommandation de stage ───────────────────────────────────────
-    y += 24; fit(200)
-    doc.setFillColor(R.navy[0], R.navy[1], R.navy[2])
-    doc.rect(MX, y, CW, 30, 'F')
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(255, 255, 255)
-    doc.text(REC_TITLE, MX + 10, y + 20)
-    y += 38
+  // Section stage
+  y += 12; fit(180)
+  doc.setFillColor(R.navy[0], R.navy[1], R.navy[2])
+  doc.rect(MX, y, CW, 26, 'F')
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(255, 255, 255)
+  doc.text(REC_TITLE, MX + 10, y + 16)
+  y += 32
 
-    write(REC_INTRO, 10, false, R.body, 0, 8)
-    write(REC_BODY,  10, true,  R.ink,  0, 10)
+  write("Contexte et motivation", 10, true, R.navy, 0, 4)
+  write(REC_INTRO, 9, false, R.body, 0, 8)
+  
+  write("Proposition de stage", 10, true, R.navy, 0, 4)
+  write(REC_BODY, 9, false, R.body, 0, 10)
 
-    for (const line of REC_CONTACTS) {
-      fit(18)
-      doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
-      doc.circle(MX + 5, y - 3, 2.2, 'F')
-      write(line, 10, false, R.body, 14, 4)
-    }
+  write("Coordonnées de contact", 10, true, R.navy, 0, 4)
+  for (const line of REC_CONTACTS) {
+    write(line, 9, false, R.body, 10, 3)
+  }
 
-    // ── Pied de page numéroté ─────────────────────────────────────────────────
-    const total = doc.getNumberOfPages()
-    for (let p = 1; p <= total; p++) {
-      doc.setPage(p)
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(8)
-      doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
-      doc.text(`KALATI RAG — ${title}  ·  Page ${p} / ${total}`, PW / 2, PH - 20, { align: 'center' })
-      doc.setDrawColor(R.border[0], R.border[1], R.border[2])
-      doc.setLineWidth(0.4); doc.line(MX, PH - 30, PW - MX, PH - 30)
-    }
+  // Pied de page
+  const total = doc.getNumberOfPages()
+  for (let p = 1; p <= total; p++) {
+    doc.setPage(p)
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
+    doc.text(`KALATI RAG — ${title}  ·  Page ${p} / ${total}`, PW / 2, PH - 20, { align: 'center' })
+    doc.setDrawColor(R.border[0], R.border[1], R.border[2])
+    doc.setLineWidth(0.3); doc.line(MX, PH - 30, PW - MX, PH - 30)
+  }
 
   doc.save(`${slug(title)}.pdf`)
 }
 
+
 // ═══════════════════════════════════════════════════════════════════════════════
-// DOCX — docx.js avec vrais tableaux
+// DOCX — Export Word
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const CELL_BORDERS = {
@@ -462,18 +431,18 @@ const CELL_BORDERS = {
 
 function docxTable(headers: string[], rows: string[][]): Table {
   const cols = headers.length || rows[0]?.length || 1
-  const pct  = Math.floor(100 / cols)
+  const pct = Math.floor(100 / cols)
 
   const cell = (txt: string, isHead: boolean, stripe: boolean) =>
     new TableCell({
       borders: CELL_BORDERS,
       shading: isHead
-        ? { type: ShadingType.SOLID, fill: H.brand,  color: H.brand  }
+        ? { type: ShadingType.SOLID, fill: H.border, color: H.border }
         : stripe
         ? { type: ShadingType.SOLID, fill: H.stripe, color: H.stripe }
-        : { type: ShadingType.CLEAR, fill: H.white,  color: H.white  },
+        : { type: ShadingType.CLEAR, fill: H.white, color: H.white },
       width: { size: pct, type: WidthType.PERCENTAGE },
-      margins: { top: 80, bottom: 80, left: 100, right: 100 },
+      margins: { top: 60, bottom: 60, left: 80, right: 80 },
       children: [new Paragraph({
         children: [new TextRun({
           text: txt || ' ',
@@ -498,19 +467,19 @@ function docxTable(headers: string[], rows: string[][]): Table {
 }
 
 export async function exportDOCX(root: HTMLElement, title: string) {
-  const blocks = extractBlocks(root)
+  const blocks = await extractBlocks(root)
   type Child = Paragraph | Table
   const ch: Child[] = []
 
-  // ── En-tête ───────────────────────────────────────────────────────────────
+  // En-tête
   ch.push(
     new Paragraph({
       children: [new TextRun({ text: title, bold: true, size: 52, color: H.brand, font: 'Calibri' })],
-      spacing: { after: 100 },
+      spacing: { after: 80 },
     }),
     new Paragraph({
-      children: [new TextRun({ text: 'KALATI RAG — Documentation technique · CAMRAIL', size: 20, color: H.gray, font: 'Calibri' })],
-      spacing: { after: 400 },
+      children: [new TextRun({ text: 'KALATI RAG — Documentation technique · CAMRAIL', size: 18, color: H.gray, font: 'Calibri' })],
+      spacing: { after: 300 },
     }),
   )
 
@@ -525,28 +494,33 @@ export async function exportDOCX(root: HTMLElement, title: string) {
         ch.push(new Paragraph({
           heading: HLVL[b.level],
           children: [new TextRun({ text: b.text, font: 'Calibri' })],
-          spacing: { before: b.level === 1 ? 400 : b.level === 2 ? 280 : 180, after: 80 },
+          spacing: { before: b.level === 1 ? 400 : b.level === 2 ? 280 : 180, after: 120 },
         }))
         break
+
       case 'paragraph':
         ch.push(new Paragraph({
           children: [new TextRun({ text: b.text, size: 20, font: 'Calibri', color: H.body })],
           spacing: { after: 120 },
         }))
         break
+
       case 'bullet':
         ch.push(new Paragraph({
           children: [new TextRun({ text: b.text, size: 20, font: 'Calibri', color: H.body })],
           bullet: { level: 0 },
-          spacing: { after: 60 },
+          spacing: { after: 80 },
         }))
         break
+
       case 'code':
         for (const ln of b.text.split('\n')) {
           ch.push(new Paragraph({
             children: [new TextRun({
-              text: ln || ' ', font: 'Courier New', size: 16, color: 'E6EDF3',
-              shading: { type: ShadingType.SOLID, fill: H.black, color: H.black },
+              text: ln || ' ',
+              font: 'Courier New',
+              size: 16,
+              color: H.body,
             })],
             spacing: { before: 0, after: 0 },
             indent: { left: convertInchesToTwip(0.2) },
@@ -554,43 +528,63 @@ export async function exportDOCX(root: HTMLElement, title: string) {
         }
         ch.push(new Paragraph({ text: '', spacing: { after: 160 } }))
         break
+
       case 'table':
         if (b.headers.length || b.rows.length) {
-          ch.push(new Paragraph({ text: '', spacing: { before: 180, after: 60 } }))
+          ch.push(new Paragraph({ text: '', spacing: { before: 160, after: 60 } }))
           ch.push(docxTable(b.headers, b.rows))
-          ch.push(new Paragraph({ text: '', spacing: { before: 60, after: 200 } }))
+          ch.push(new Paragraph({ text: '', spacing: { before: 80, after: 200 } }))
         }
         break
 
       case 'image':
-        // Pour les images en DOCX, créer un paragraphe de substitution
-        // (docx.js ne supporte pas facilement les images dataURL/importées sans conversion)
         ch.push(new Paragraph({
-          children: [new TextRun({ text: `[Image : ${b.alt}]${b.caption ? ` — ${b.caption}` : ''}`, italic: true, size: 18, color: H.gray })],
+          children: [new TextRun({ text: `[Image: ${b.alt}]${b.caption ? ` — ${b.caption}` : ''}`, italic: true, size: 18, color: H.gray })],
           spacing: { before: 160, after: 160 },
           alignment: 'center' as any,
+        }))
+        break
+
+      case 'separator':
+        ch.push(new Paragraph({
+          border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: H.border } },
+          spacing: { before: 120, after: 120 },
+          text: '',
         }))
         break
     }
   }
 
-  // ── Section recommandation de stage ───────────────────────────────────────
+  // Section stage
   ch.push(
-    new Paragraph({ text: '', spacing: { before: 700, after: 0 } }),
+    new Paragraph({ text: '', spacing: { before: 600, after: 0 } }),
     new Paragraph({
       children: [new TextRun({ text: REC_TITLE, bold: true, size: 28, color: H.navy, font: 'Calibri' })],
-      spacing: { before: 200, after: 140 },
+      spacing: { before: 200, after: 200 },
       border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: H.brand } },
     }),
     new Paragraph({
-      children: [new TextRun({ text: REC_INTRO, size: 20, font: 'Calibri', color: H.body })],
-      spacing: { after: 140 },
+      children: [new TextRun({ text: 'Contexte et motivation', bold: true, size: 22, color: H.navy, font: 'Calibri' })],
+      spacing: { before: 120, after: 120 },
     }),
     new Paragraph({
-      children: [new TextRun({ text: REC_BODY, bold: true, size: 20, font: 'Calibri', color: H.ink })],
-      spacing: { after: 140 },
+      children: [new TextRun({ text: REC_INTRO, size: 20, font: 'Calibri', color: H.body })],
+      spacing: { after: 160 },
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: 'Proposition de stage', bold: true, size: 22, color: H.navy, font: 'Calibri' })],
+      spacing: { before: 120, after: 120 },
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: REC_BODY, size: 20, font: 'Calibri', color: H.body })],
+      spacing: { after: 160 },
+    }),
+    new Paragraph({
+      children: [new TextRun({ text: 'Coordonnées de contact', bold: true, size: 22, color: H.navy, font: 'Calibri' })],
+      spacing: { before: 120, after: 120 },
     }),
   )
+
   for (const ln of REC_CONTACTS) {
     ch.push(new Paragraph({
       children: [new TextRun({ text: ln, size: 20, font: 'Calibri', color: H.body })],
@@ -599,7 +593,7 @@ export async function exportDOCX(root: HTMLElement, title: string) {
     }))
   }
 
-  // ── Document final ────────────────────────────────────────────────────────
+  // Document final
   const document = new Document({
     styles: {
       default: { document: { run: { font: 'Calibri', size: 20, color: H.body } } },
@@ -607,14 +601,12 @@ export async function exportDOCX(root: HTMLElement, title: string) {
         {
           id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal',
           run: { bold: true, size: 32, color: H.brand, font: 'Calibri' },
-          paragraph: { spacing: { before: 400, after: 140 },
-            border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: H.brand } } },
+          paragraph: { spacing: { before: 400, after: 140 }, border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: H.brand } } },
         },
         {
           id: 'Heading2', name: 'Heading 2', basedOn: 'Normal', next: 'Normal',
           run: { bold: true, size: 26, color: H.navy, font: 'Calibri' },
-          paragraph: { spacing: { before: 280, after: 80 },
-            border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: H.border } } },
+          paragraph: { spacing: { before: 280, after: 80 }, border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: H.border } } },
         },
         {
           id: 'Heading3', name: 'Heading 3', basedOn: 'Normal', next: 'Normal',
@@ -629,10 +621,7 @@ export async function exportDOCX(root: HTMLElement, title: string) {
       ],
     },
     sections: [{
-      properties: { page: { margin: {
-        top:    convertInchesToTwip(1),   bottom: convertInchesToTwip(1),
-        left:   convertInchesToTwip(1.1), right:  convertInchesToTwip(1.1),
-      }}},
+      properties: { page: { margin: { top: convertInchesToTwip(1), bottom: convertInchesToTwip(1), left: convertInchesToTwip(1), right: convertInchesToTwip(1) } } },
       children: ch,
     }],
   })
