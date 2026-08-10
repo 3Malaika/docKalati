@@ -130,9 +130,7 @@ export default function App() {
 
           {/* Brand */}
           <a href="#" className="flex items-center gap-3 flex-shrink-0" onClick={(e) => { e.preventDefault(); handleTabChange(TABS[0].id) }}>
-            <span className="flex items-center justify-center h-9 w-9 rounded-lg bg-brand shadow-sm shadow-brand/30">
-              <img src={camrailLogo} alt="Logo CAMRAIL" className="h-6 w-auto object-contain" />
-            </span>
+            <img src={camrailLogo} alt="Logo CAMRAIL" className="h-10 w-auto object-contain" />
             <span className="leading-none">
               <span className="block font-bold tracking-tight text-[15px]">
                 KALATI <span className="text-brand">RAG</span>

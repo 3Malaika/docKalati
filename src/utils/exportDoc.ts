@@ -33,14 +33,44 @@ type Block =
   | { type: 'bullet'; text: string }
   | { type: 'code'; text: string }
   | { type: 'table'; headers: string[]; rows: string[][] }
-  | { type: 'image'; src: string; alt: string; caption?: string }
+  | { type: 'image'; src: string; alt: string; caption?: string; width: number; height: number }
 
 const clean = (s: string | null | undefined) =>
   (s ?? '').replace(/\s+/g, ' ').trim()
 
-function extractBlocks(root: HTMLElement): Block[] {
+function loadImage(src: string): Promise<{ dataUrl: string; width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    
+    img.onload = () => {
+      // Si c'est déjà une data URL, l'utiliser directement
+      if (src.startsWith('data:')) {
+        resolve({ dataUrl: src, width: img.naturalWidth, height: img.naturalHeight })
+      } else {
+        // Convertir en data URL via canvas
+        const canvas = document.createElement('canvas')
+        canvas.width = img.naturalWidth
+        canvas.height = img.naturalHeight
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          ctx.drawImage(img, 0, 0)
+          resolve({ dataUrl: canvas.toDataURL('image/png'), width: img.naturalWidth, height: img.naturalHeight })
+        } else {
+          resolve({ dataUrl: src, width: img.naturalWidth, height: img.naturalHeight })
+        }
+      }
+    }
+    
+    img.onerror = () => reject(new Error(`Impossible de charger l'image: ${src}`))
+    img.crossOrigin = 'anonymous'
+    img.src = src
+  })
+}
+
+async function extractBlocks(root: HTMLElement): Promise<Block[]> {
   const blocks: Block[] = []
-  const walk = (node: Element) => {
+  
+  const walk = async (node: Element) => {
     for (const child of Array.from(node.children)) {
       const tag = child.tagName.toLowerCase()
       if (tag === 'button' || tag === 'svg' || tag === 'path') continue
@@ -71,34 +101,23 @@ function extractBlocks(root: HTMLElement): Block[] {
           const alt = img.getAttribute('alt') || ''
           const figcap = child.querySelector('figcaption')?.textContent
           if (src) {
-            // Convertir l'image en data URL si ce n'est pas déjà le cas
-            const processImage = async () => {
-              if (src.startsWith('data:')) {
-                blocks.push({ type: 'image', src, alt, caption: figcap })
-              } else {
-                try {
-                  const response = await fetch(src)
-                  const blob = await response.blob()
-                  const reader = new FileReader()
-                  reader.onload = (e) => {
-                    const dataUrl = e.target?.result as string
-                    blocks.push({ type: 'image', src: dataUrl, alt, caption: figcap })
-                  }
-                  reader.readAsDataURL(blob)
-                } catch (err) {
-                  blocks.push({ type: 'image', src, alt, caption: figcap })
-                }
-              }
+            try {
+              // Charger l'image et obtenir ses dimensions
+              const { dataUrl, width, height } = await loadImage(src)
+              blocks.push({ type: 'image', src: dataUrl, alt, caption: figcap, width, height })
+            } catch (err) {
+              console.error('Erreur chargement image:', err)
+              blocks.push({ type: 'image', src, alt, caption: figcap, width: 800, height: 600 })
             }
-            processImage()
           }
         }
       } else {
-        walk(child)
+        await walk(child)
       }
     }
   }
-  walk(root)
+  
+  await walk(root)
   return blocks
 }
 
@@ -138,10 +157,8 @@ const slug = (s: string) =>
 // ═══════════════════════════════════════════════════════════════════════════════
 // PDF — jsPDF avec tableaux manuels (sans dépendance autoTable)
 // ═══════════════════════════════════════════════════════════════════════════════
-export function exportPDF(root: HTMLElement, title: string) {
-  // Attendre un peu pour laisser les images se convertir
-  setTimeout(() => {
-    const blocks = extractBlocks(root)
+export async function exportPDF(root: HTMLElement, title: string) {
+  const blocks = await extractBlocks(root)
     const doc = new jsPDF({ unit: 'pt', format: 'a4', compress: true })
 
     const MX = 50, MT = 60, MB = 50
@@ -176,10 +193,24 @@ export function exportPDF(root: HTMLElement, title: string) {
     // ── Bandeau titre ──────────────────────────────────────────────────────────
     doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
     doc.rect(0, 0, PW, 88, 'F')
+    
+    // Ajouter le logo CAMRAIL (si disponible dans les blocs)
+    const logoBlock = blocks.find(b => b.type === 'image' && b.alt?.includes('CAMRAIL'))
+    if (logoBlock && logoBlock.type === 'image') {
+      try {
+        // Logo agrandi : 35pt de hauteur
+        const logoH = 35
+        const logoW = logoH * (logoBlock.width / logoBlock.height)
+        doc.addImage(logoBlock.src, 'PNG', MX, 10, logoW, logoH)
+      } catch (e) {
+        // Ignorer les erreurs de logo
+      }
+    }
+    
     doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(255, 255, 255)
-    doc.text(title, MX, 50)
+    doc.text(title, MX + (logoBlock ? 50 : 0), 50)
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(255, 200, 195)
-    doc.text('KALATI RAG — Documentation technique · CAMRAIL', MX, 70)
+    doc.text('KALATI RAG — Documentation technique · CAMRAIL', MX + (logoBlock ? 50 : 0), 70)
     y = 108
 
     // ── Fonction tableau manuel ────────────────────────────────────────────────
@@ -328,16 +359,35 @@ export function exportPDF(root: HTMLElement, title: string) {
           break
 
         case 'image': {
-          // Images en PDF via data URL
+          // Images en PDF avec dimensionnement intelligent basé sur le ratio
           try {
             y += 8
             
             // Déterminer le type d'image
             const imageType = b.src.includes('.png') || b.src.startsWith('data:image/png') ? 'PNG' : 'JPEG'
             
-            // Largeur fixe pour les images : 70% de la largeur utile
-            const imgW = CW * 0.7
-            const imgH = imgW * 0.6 // ratio d'aspect approximatif
+            // Calculer les dimensions en fonction du rapport d'aspect
+            const ratio = b.height / b.width
+            const isSquare = Math.abs(ratio - 1) < 0.15 // ±15% considéré comme carré
+            const isPortrait = ratio > 1.3
+            const isLandscape = ratio < 0.7
+            
+            let imgW: number
+            if (isSquare) {
+              // Carré : 45% de la largeur
+              imgW = CW * 0.45
+            } else if (isPortrait) {
+              // Portrait : 35% pour ne pas être trop grand
+              imgW = CW * 0.35
+            } else if (isLandscape) {
+              // Paysage : 90% pour exploiter la largeur
+              imgW = CW * 0.9
+            } else {
+              // Légèrement rectangle : 70%
+              imgW = CW * 0.7
+            }
+            
+            const imgH = imgW * ratio
             
             fit(imgH + 30)
             // Centrer horizontalement
@@ -397,8 +447,7 @@ export function exportPDF(root: HTMLElement, title: string) {
       doc.setLineWidth(0.4); doc.line(MX, PH - 30, PW - MX, PH - 30)
     }
 
-    doc.save(`${slug(title)}.pdf`)
-  }, 500)
+  doc.save(`${slug(title)}.pdf`)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
