@@ -27,14 +27,18 @@ const H: Record<string, string> = {
 }
 
 // ── Modèle de blocs ───────────────────────────────────────────────────────────
+type BadgeColor = 'red' | 'green' | 'blue' | 'yellow' | 'gray'
 type Block =
   | { type: 'heading'; level: 1 | 2 | 3 | 4; text: string }
   | { type: 'paragraph'; text: string }
   | { type: 'bullet'; text: string }
   | { type: 'code'; text: string }
-  | { type: 'table'; headers: string[]; rows: string[][] }
+  | { type: 'table'; headers: string[]; rows: string[][]; badges?: (string | BadgeColor)[][] }
   | { type: 'image'; src: string; alt: string; caption?: string; width: number; height: number }
   | { type: 'separator'; }
+  | { type: 'card'; variant: 'info' | 'warning' | 'success' | 'error'; title?: string; content: string }
+  | { type: 'steps'; steps: { n: number; title: string; content: string }[] }
+  | { type: 'list'; items: string[] }
 
 const clean = (s: string | null | undefined) =>
   (s ?? '').replace(/\s+/g, ' ').trim()
@@ -419,7 +423,7 @@ export async function exportPDF(root: HTMLElement, title: string) {
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// DOCX — Export Word
+// DOCX — Reproduction fidèle du HTML
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const CELL_BORDERS = {
@@ -429,41 +433,44 @@ const CELL_BORDERS = {
   right:  { style: BorderStyle.SINGLE, size: 4, color: H.border },
 }
 
-function docxTable(headers: string[], rows: string[][]): Table {
-  const cols = headers.length || rows[0]?.length || 1
-  const pct = Math.floor(100 / cols)
+const BADGE_COLORS: Record<BadgeColor, string> = {
+  red: 'E63329',
+  green: '10B981',
+  blue: '3B82F6',
+  yellow: 'F59E0B',
+  gray: '6B7A8D',
+}
 
-  const cell = (txt: string, isHead: boolean, stripe: boolean) =>
-    new TableCell({
-      borders: CELL_BORDERS,
-      shading: isHead
-        ? { type: ShadingType.SOLID, fill: H.border, color: H.border }
-        : stripe
-        ? { type: ShadingType.SOLID, fill: H.stripe, color: H.stripe }
-        : { type: ShadingType.CLEAR, fill: H.white, color: H.white },
-      width: { size: pct, type: WidthType.PERCENTAGE },
-      margins: { top: 60, bottom: 60, left: 80, right: 80 },
-      children: [new Paragraph({
-        children: [new TextRun({
-          text: txt || ' ',
-          bold: isHead,
-          color: isHead ? H.white : H.body,
-          size: 18,
-          font: 'Calibri',
-        })],
-      })],
-    })
+function docxBadge(text: string, color: BadgeColor): TextRun {
+  return new TextRun({
+    text: ` ${text} `,
+    bold: true,
+    size: 16,
+    color: 'FFFFFF',
+    shading: { type: ShadingType.SOLID, fill: BADGE_COLORS[color], color: BADGE_COLORS[color] },
+  })
+}
 
-  const tRows: TableRow[] = []
-  if (headers.length) {
-    tRows.push(new TableRow({ tableHeader: true, children: headers.map(h => cell(h, true, false)) }))
+function docxCard(variant: 'info' | 'warning' | 'success' | 'error', title: string | undefined, content: string): Paragraph {
+  const colors: Record<string, { bg: string; border: string; text: string }> = {
+    info: { bg: 'DBEAFE', border: '3B82F6', text: '1F2937' },
+    warning: { bg: 'FEF3C7', border: 'F59E0B', text: '1F2937' },
+    success: { bg: 'D1FAE5', border: '10B981', text: '1F2937' },
+    error: { bg: 'FEE2E2', border: 'EF4444', text: '1F2937' },
   }
-  rows.forEach((row, ri) =>
-    tRows.push(new TableRow({
-      children: Array.from({ length: cols }, (_, ci) => cell(row[ci] ?? '', false, ri % 2 === 1)),
-    }))
-  )
-  return new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: tRows })
+  const cfg = colors[variant]
+  
+  return new Paragraph({
+    children: [new TextRun({
+      text: title ? `${title}: ${content}` : content,
+      size: 20,
+      color: cfg.text,
+    })],
+    shading: { type: ShadingType.SOLID, fill: cfg.bg, color: cfg.bg },
+    border: { left: { style: BorderStyle.SINGLE, size: 24, color: cfg.border } },
+    spacing: { before: 120, after: 120 },
+    indent: { left: convertInchesToTwip(0.15), right: convertInchesToTwip(0.15) },
+  })
 }
 
 export async function exportDOCX(root: HTMLElement, title: string) {
@@ -529,13 +536,54 @@ export async function exportDOCX(root: HTMLElement, title: string) {
         ch.push(new Paragraph({ text: '', spacing: { after: 160 } }))
         break
 
-      case 'table':
+      case 'table': {
         if (b.headers.length || b.rows.length) {
           ch.push(new Paragraph({ text: '', spacing: { before: 160, after: 60 } }))
-          ch.push(docxTable(b.headers, b.rows))
+          
+          const cols = b.headers.length || b.rows[0]?.length || 1
+          const pct = Math.floor(100 / cols)
+
+          const cell = (txt: string, isHead: boolean, stripe: boolean, badgeColor?: BadgeColor) =>
+            new TableCell({
+              borders: CELL_BORDERS,
+              shading: isHead
+                ? { type: ShadingType.SOLID, fill: H.brand, color: H.brand }
+                : stripe
+                ? { type: ShadingType.SOLID, fill: H.stripe, color: H.stripe }
+                : { type: ShadingType.CLEAR, fill: H.white, color: H.white },
+              width: { size: pct, type: WidthType.PERCENTAGE },
+              margins: { top: 80, bottom: 80, left: 100, right: 100 },
+              children: [new Paragraph({
+                children: badgeColor
+                  ? [docxBadge(txt, badgeColor)]
+                  : [new TextRun({
+                      text: txt || ' ',
+                      bold: isHead,
+                      color: isHead ? H.white : H.body,
+                      size: 18,
+                      font: 'Calibri',
+                    })],
+              })],
+            })
+
+          const tRows: TableRow[] = []
+          if (b.headers.length) {
+            tRows.push(new TableRow({ tableHeader: true, children: b.headers.map(h => cell(h, true, false)) }))
+          }
+          b.rows.forEach((row, ri) => {
+            tRows.push(new TableRow({
+              children: Array.from({ length: cols }, (_, ci) => {
+                const badgeColor = b.badges?.[ri]?.[ci] as BadgeColor | undefined
+                return cell(row[ci] ?? '', false, ri % 2 === 1, badgeColor)
+              }),
+            }))
+          })
+          
+          ch.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: tRows }))
           ch.push(new Paragraph({ text: '', spacing: { before: 80, after: 200 } }))
         }
         break
+      }
 
       case 'image':
         ch.push(new Paragraph({
@@ -551,6 +599,41 @@ export async function exportDOCX(root: HTMLElement, title: string) {
           spacing: { before: 120, after: 120 },
           text: '',
         }))
+        break
+
+      case 'card':
+        ch.push(docxCard(b.variant, b.title, b.content))
+        break
+
+      case 'steps':
+        for (const step of b.steps) {
+          ch.push(new Paragraph({
+            children: [
+              new TextRun({
+                text: `${step.n}. ${step.title}`,
+                bold: true,
+                size: 20,
+                color: H.brand,
+                font: 'Calibri',
+              }),
+            ],
+            spacing: { before: 80, after: 40 },
+          }))
+          ch.push(new Paragraph({
+            children: [new TextRun({ text: step.content, size: 18, color: H.body, font: 'Calibri' })],
+            spacing: { after: 80 },
+          }))
+        }
+        break
+
+      case 'list':
+        for (const item of b.items) {
+          ch.push(new Paragraph({
+            children: [new TextRun({ text: item, size: 20, font: 'Calibri', color: H.body })],
+            bullet: { level: 0 },
+            spacing: { after: 60 },
+          }))
+        }
         break
     }
   }
