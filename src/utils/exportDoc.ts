@@ -305,30 +305,58 @@ export function exportPDF(root: HTMLElement, title: string) {
         break
 
       case 'image': {
-        // Images en PDF via URL/base64 — constante pour éviter l'étirement
+        // Images en PDF via URL/base64
         try {
           y += 8
           
-          // Largeur fixe pour toutes les images : 70% de la largeur utile
-          // Cela maintient le ratio aspect et évite l'étirement
-          const imgW = CW * 0.7
-          const imgH = imgW * 0.5625 // ratio 16:9 par défaut (pour compatibility)
+          // Déterminer le type d'image pour utiliser le bon format
+          const isDataUrl = b.src.startsWith('data:')
+          const imageType = b.src.includes('.png') || b.src.startsWith('data:image/png') ? 'PNG' : 'JPEG'
           
-          fit(imgH + 30)
-          // Centrer horizontalement
-          const xPos = MX + (CW - imgW) / 2
-          doc.addImage(b.src, 'PNG', xPos, y, imgW, imgH)
-          y += imgH + 10
+          // Créer une image pour obtenir les dimensions réelles
+          const img = new Image()
           
-          if (b.caption) {
-            doc.setFont('helvetica', 'italic'); doc.setFontSize(8)
-            doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
-            const lines: string[] = doc.splitTextToSize(b.caption, imgW)
-            for (const ln of lines) { doc.text(ln, xPos, y); y += 10 }
+          // Événement de succès
+          img.onload = () => {
+            const naturalW = img.naturalWidth || 800
+            const naturalH = img.naturalHeight || 600
+            const imgRatio = naturalH / naturalW
+            
+            // Adapter la largeur en fonction de la dimension réelle
+            let imgW = CW * 0.8 // largeur par défaut
+            if (naturalW < 600) {
+              imgW = CW * 0.5 // petites images : 50% de la largeur
+            } else if (naturalW < 1000) {
+              imgW = CW * 0.65 // images moyennes : 65%
+            }
+            // sinon : images grandes/larges : 80%
+            
+            const imgH = imgW * imgRatio // hauteur calculée selon le vrai ratio
+            
+            fit(imgH + 30)
+            // Centrer horizontalement
+            const xPos = MX + (CW - imgW) / 2
+            doc.addImage(b.src, imageType, xPos, y, imgW, imgH)
+            y += imgH + 10
+            
+            if (b.caption) {
+              doc.setFont('helvetica', 'italic'); doc.setFontSize(8)
+              doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
+              const lines: string[] = doc.splitTextToSize(b.caption, imgW)
+              for (const ln of lines) { doc.text(ln, xPos, y); y += 10 }
+            }
+            y += 4
+            doc.setFont('helvetica', 'normal')
+            doc.setTextColor(R.body[0], R.body[1], R.body[2])
           }
-          y += 4
-          doc.setFont('helvetica', 'normal')
-          doc.setTextColor(R.body[0], R.body[1], R.body[2])
+          
+          // Événement d'erreur
+          img.onerror = () => {
+            write(`[Image non disponible : ${b.alt}]`, 9, false, R.gray, 0, 6)
+          }
+          
+          // Charger l'image
+          img.src = b.src
         } catch (e) {
           write(`[Image non disponible : ${b.alt}]`, 9, false, R.gray, 0, 6)
         }
