@@ -290,7 +290,7 @@ export default function AdminFormateur() {
 
         <Card variant="danger">
           <strong>🚫 Point de vigilance critique</strong>
-          <p className="mt-2 text-sm">Ne jamais se fier aveuglément à une réponse touchant à la sécurité (Marche à Vue, consignes gare). <strong>Toujours vérifier le document source cité avant d'agir.</strong> KALATI est une aide à la recherche, pas une autorité réglementaire.
+          <p className="mt-2 text-sm">Ne jamais se fier aveuglément à une réponse touchant à la sécurité (Marche à Vue, consignes gare). <strong>Toujours vérifier le document source cité avant d'agir.</strong> KALATI est une aide à la recherche, pas une autorité réglementaire.</p>
         </Card>
       </AnimSection>
 
