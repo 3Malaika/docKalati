@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>KALATI RAG — Manuel Administrateur & Formateur</title>
+<style>
+  :root { --red:#e63329; --dark:#1a2e4a; --light:#f8f9fa; --border:#dee2e6; --code:#2d2d2d; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Segoe UI',Arial,sans-serif; background:#fff; color:#222; line-height:1.7; }
+  header { background:var(--dark); color:#fff; padding:2rem 2.5rem; border-bottom:4px solid var(--red); }
+  header h1 { font-size:2rem; letter-spacing:1px; }
+  header p { opacity:.8; margin-top:.4rem; }
+  nav { background:#f1f3f5; border-bottom:1px solid var(--border); padding:.8rem 2.5rem; position:sticky; top:0; z-index:100; }
+  nav a { color:var(--dark); text-decoration:none; margin-right:1.5rem; font-size:.9rem; font-weight:600; }
+  nav a:hover { color:var(--red); }
+  main { max-width:1100px; margin:0 auto; padding:2rem 2.5rem; }
+  h2 { color:var(--dark); border-left:4px solid var(--red); padding-left:.8rem; margin:2.5rem 0 1rem; font-size:1.4rem; }
+  h3 { color:var(--dark); margin:1.5rem 0 .6rem; font-size:1.1rem; }
+  h4 { color:#555; margin:1rem 0 .4rem; font-size:1rem; }
+  p { margin-bottom:.8rem; }
+  ul,ol { margin:.5rem 0 1rem 1.5rem; }
+  li { margin-bottom:.4rem; }
+  code { background:#f0f0f0; border-radius:3px; padding:.1em .4em; font-size:.88em; font-family:'Courier New',monospace; }
+  pre { background:var(--code); color:#f8f8f2; border-radius:8px; padding:1.2rem; overflow-x:auto; margin:1rem 0; font-size:.88em; line-height:1.6; }
+  pre code { background:none; color:inherit; padding:0; }
+  .badge { display:inline-block; padding:.2em .7em; border-radius:20px; font-size:.78em; font-weight:700; margin:.1em; }
+  .badge-red { background:#fde8e8; color:var(--red); border:1px solid #f5c2c2; }
+  .badge-blue { background:#e8f0fe; color:#1a56db; border:1px solid #bfcefe; }
+  .badge-green { background:#e8f8ee; color:#0a7a3e; border:1px solid #b3e6c8; }
+  .badge-orange { background:#fff3e0; color:#b45309; border:1px solid #fdd89a; }
+  .badge-purple { background:#f3e8ff; color:#6b21a8; border:1px solid #d8b4fe; }
+  .card { background:var(--light); border:1px solid var(--border); border-radius:10px; padding:1.2rem 1.5rem; margin:1rem 0; }
+  .card-warn { background:#fff8e1; border-color:#fbc02d; }
+  .card-info { background:#e3f2fd; border-color:#1976d2; }
+  .card-success { background:#e8f5e9; border-color:#388e3c; }
+  .card-danger { background:#fce4ec; border-color:var(--red); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; }
+  table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:.9rem; }
+  th { background:var(--dark); color:#fff; padding:.6rem 1rem; text-align:left; }
+  td { padding:.6rem 1rem; border-bottom:1px solid var(--border); }
+  tr:nth-child(even) td { background:#f8f9fa; }
+  .step { display:flex; gap:1rem; margin:.8rem 0; }
+  .step-num { background:var(--red); color:#fff; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem; flex-shrink:0; margin-top:.15rem; }
+  .part-divider { background:var(--dark); color:#fff; padding:1.5rem 2rem; margin:3rem 0 1.5rem; border-radius:10px; }
+  .part-divider h2 { color:#fff; border:none; padding:0; margin:0; font-size:1.6rem; }
+  .part-divider p { opacity:.85; margin-top:.3rem; }
+  .faq-q { font-weight:700; color:var(--dark); margin-top:1rem; }
+  .faq-a { margin-left:1rem; color:#444; }
+  footer { background:var(--dark); color:#aaa; text-align:center; padding:1.5rem; margin-top:3rem; font-size:.85rem; }
+  @media(max-width:700px){ .grid2,.grid3{grid-template-columns:1fr;} nav a{display:block;margin:.3rem 0;} }
+</style>
+</head>
+<body>
+<header>
+  <h1>🚂 KALATI RAG — Manuel Administrateur &amp; Formateur</h1>
+  <p>Portail de Recherche Documentaire Augmentée · CAMRAIL</p>
+</header>
+<nav>
+  <a href="#intro">Introduction</a>
+  <a href="#admin-role">Rôle admin</a>
+  <a href="#admin-docs">Documents</a>
+  <a href="#admin-users">Utilisateurs</a>
+  <a href="#admin-audit">Audit</a>
+  <a href="#admin-securite">Sécurité</a>
+  <a href="#admin-depannage">Dépannage</a>
+  <a href="#formateur">Formation</a>
+  <a href="#formateur-seance">Déroulé de séance</a>
+  <a href="#formateur-prompt">Prompt engineering</a>
+  <a href="#formateur-faq">FAQ</a>
+</nav>
+<main>
+
+<section id="intro">
+<h2>📋 À propos de ce manuel</h2>
+<p>Ce document s'adresse à deux publics distincts, réunis dans un seul manuel pour des raisons de cohérence documentaire :</p>
+<div class="grid2">
+  <div class="card">
+    <h4>👤 Partie 1 — Administrateur</h4>
+    <p>Destinée à la <strong>Coordination Informatique (CI)</strong>, seule habilitée à gérer les documents, les comptes utilisateurs et à consulter l'audit du système.</p>
+  </div>
+  <div class="card">
+    <h4>🎓 Partie 2 — Formateur</h4>
+    <p>Destinée à toute personne chargée d'accompagner les agents CAMRAIL dans la prise en main de KALATI, y compris le prompt engineering.</p>
+  </div>
+</div>
+<div class="card card-info">
+  <strong>ℹ️ Document complémentaire</strong> — Pour l'installation technique du système (serveurs, variables d'environnement, dépendances), reportez-vous au <em>Guide Technique Complet</em> (KALATI_GUIDE.html). Ce manuel-ci ne couvre que l'utilisation opérationnelle une fois le système déployé.
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════ PARTIE 1 : ADMINISTRATEUR ═══════════════════════════════════════════ -->
+<div class="part-divider">
+  <h2>PARTIE 1 — MANUEL ADMINISTRATEUR</h2>
+  <p>Coordination Informatique (CI) — Gestion quotidienne du système KALATI</p>
+</div>
+
+<section id="admin-role">
+<h2>👤 Rôle et responsabilités de l'administrateur</h2>
+<p>L'administrateur (groupe <code>admin</code>) est la seule personne habilitée à :</p>
+<ul>
+  <li>Ajouter, modifier ou supprimer des documents du corpus documentaire</li>
+  <li>Définir quels groupes de personnel ont accès à quel document</li>
+  <li>Créer, modifier ou supprimer des comptes utilisateurs</li>
+  <li>Consulter l'historique complet des questions posées (audit)</li>
+  <li>Déclencher une ré-indexation complète du corpus</li>
+</ul>
+<div class="card card-warn">
+  <strong>⚠️ Responsabilité</strong> — Chaque action de l'administrateur a un impact direct sur la confidentialité des données. Attribuer un mauvais groupe à un document sensible (ex: dossiers RH) peut l'exposer à des personnes non autorisées. Voir la section <a href="#admin-securite">Sécurité et bonnes pratiques</a>.
+</div>
+</section>
+
+<section id="admin-docs">
+<h2>📄 Gestion des documents</h2>
+
+<h3>Ajouter un document</h3>
+<div class="step"><div class="step-num">1</div><div>Connectez-vous avec un compte du groupe <code>admin</code>, puis ouvrez le <strong>Dashboard Admin → Documents</strong>.</div></div>
+<div class="step"><div class="step-num">2</div><div>Glissez-déposez un ou plusieurs fichiers (formats acceptés : <code>.pdf</code>, <code>.docx</code>, <code>.txt</code> — 50 Mo max par fichier) dans la zone d'upload.</div></div>
+<div class="step"><div class="step-num">3</div><div>Sélectionnez les <strong>groupes autorisés</strong> à consulter ce document (ex: <span class="badge badge-blue">rh</span>, <span class="badge badge-orange">securite</span>). Le groupe <code>admin</code> a systématiquement accès à tout document, même non coché.</div></div>
+<div class="step"><div class="step-num">4</div><div>Cliquez sur <strong>Envoyer</strong>. Le système lit, découpe et indexe automatiquement le document — comptez quelques secondes à quelques minutes selon la taille et la présence de tableaux/images.</div></div>
+
+<div class="card card-warn">
+  <strong>⚠️ Choix des groupes — à ne jamais faire à la légère</strong>
+  <p>Un document sans groupe sélectionné n'est visible <strong>que par les administrateurs</strong> (comportement de sécurité par défaut, appelé "fail-safe" : en cas de doute, le système restreint plutôt que d'exposer). Si un document CAMRAIL doit être visible par les agents Sécurité ET Transport, cochez bien les deux groupes — un oubli rendrait le document invisible pour l'un des deux services, sans message d'erreur explicite pour l'utilisateur final (qui verra juste "aucun document pertinent trouvé").</p>
+</div>
+
+<h3>Supprimer un document</h3>
+<p>Dashboard Admin → Documents → icône de suppression sur la ligne du document concerné. Confirmez.</p>
+<div class="card card-info">
+  <strong>ℹ️ Point technique important</strong> — Supprimer un document retire le fichier et son entrée du manifeste d'accès, mais <strong>les fragments déjà indexés dans la base vectorielle restent présents</strong> jusqu'à la prochaine ré-indexation complète. Si vous supprimez un document sensible, lancez immédiatement une <strong>ré-indexation complète</strong> (bouton dédié, voir ci-dessous) pour purger réellement son contenu de l'index de recherche.
+</div>
+
+<h3>Ré-indexation complète</h3>
+<p>Dashboard Admin → Documents → <strong>Ré-ingérer tout</strong>. Relit l'intégralité du dossier documents et reconstruit l'index de recherche. À utiliser :</p>
+<ul>
+  <li>Après la suppression d'un document sensible (purge réelle de l'index)</li>
+  <li>Si vous avez modifié manuellement des fichiers sur le serveur (hors interface admin)</li>
+  <li>En cas de doute sur la cohérence de l'index</li>
+</ul>
+<div class="card card-warn">
+  <strong>⚠️ Durée</strong> — Sur un corpus volumineux, cette opération peut prendre plusieurs minutes (chaque document est relu, redécoupé, ré-envoyé au service d'embeddings). Évitez de la lancer en heure de forte affluence si le système est utilisé en production.
+</div>
+
+<h3>Statut d'un document</h3>
+<p>La colonne <strong>"Dans le manifeste"</strong> de la liste des documents indique si le fichier est correctement enregistré dans <code>access_manifest.json</code>. Un document présent sur le disque mais absent du manifeste (ex: copié manuellement sans passer par l'upload) est traité comme réservé aux admins uniquement — c'est le comportement de sécurité attendu, pas une anomalie.</p>
+</section>
+
+<section id="admin-users">
+<h2>👥 Gestion des utilisateurs</h2>
+
+<h3>Créer un utilisateur</h3>
+<div class="step"><div class="step-num">1</div><div>Dashboard Admin → Utilisateurs → <strong>Nouvel utilisateur</strong>.</div></div>
+<div class="step"><div class="step-num">2</div><div>Renseignez : identifiant (ex: <code>agent.dupont</code>), nom complet, mot de passe temporaire, et les groupes de sécurité correspondant à sa fonction.</div></div>
+<div class="step"><div class="step-num">3</div><div>Transmettez l'identifiant et le mot de passe temporaire à l'agent par un canal sécurisé (jamais par email en clair si possible) et invitez-le à le changer dès sa première connexion.</div></div>
+
+<h3>Attribution des groupes — règle de base</h3>
+<table>
+  <tr><th>Groupe</th><th>Corps de métier concerné</th></tr>
+  <tr><td><span class="badge badge-red">admin</span></td><td>Coordination Informatique uniquement</td></tr>
+  <tr><td><span class="badge badge-blue">rh</span></td><td>Personnel des Ressources Humaines</td></tr>
+  <tr><td><span class="badge badge-orange">securite</span></td><td>Agents de sécurité, personnel de gare</td></tr>
+  <tr><td><span class="badge badge-green">maintenance</span></td><td>Équipes de maintenance ferroviaire</td></tr>
+  <tr><td><span class="badge badge-purple">transport</span></td><td>Personnel d'exploitation / transport</td></tr>
+  <tr><td>direction</td><td>Direction Générale et Directions rattachées</td></tr>
+</table>
+<div class="card card-info">
+  <strong>ℹ️ Cumul de groupes</strong> — Un agent peut appartenir à plusieurs groupes (ex: un responsable RH-Sécurité de gare). Cochez tous les groupes pertinents ; l'utilisateur verra alors l'union des documents accessibles à chacun de ses groupes.
+</div>
+
+<h3>Modifier / désactiver un utilisateur</h3>
+<p>Dashboard Admin → Utilisateurs → sélectionner l'utilisateur → modifier les groupes, le nom, ou réinitialiser le mot de passe. La suppression est définitive et immédiate (l'utilisateur ne peut plus se connecter, ses questions passées restent dans l'audit).</p>
+
+<h3>Départ ou changement de poste d'un agent</h3>
+<p>Procédure recommandée :</p>
+<ol>
+  <li><strong>Changement de service</strong> : modifier les groupes de l'utilisateur pour refléter sa nouvelle fonction (retirer l'ancien groupe, ajouter le nouveau).</li>
+  <li><strong>Départ définitif de l'entreprise</strong> : supprimer le compte sans délai. Un compte actif d'un agent parti est un risque de sécurité inutile.</li>
+</ol>
+</section>
+
+<section id="admin-audit">
+<h2>📊 Consultation de l'audit et de l'historique</h2>
+<p>Dashboard Admin → Audit. Chaque question posée par chaque utilisateur y est enregistrée avec :</p>
+<ul>
+  <li>Date et heure exactes</li>
+  <li>Identifiant et groupes de l'utilisateur au moment de la question</li>
+  <li>La question posée et la réponse générée</li>
+  <li>Les documents sources utilisés pour construire la réponse</li>
+</ul>
+<div class="card card-success">
+  <strong>✅ Pourquoi c'est important</strong> — Cet historique répond à l'exigence de traçabilité du cahier des charges : en cas de question sur la fiabilité d'une réponse, ou de contrôle réglementaire, vous pouvez retracer exactement ce qui a été demandé, par qui, et sur quelle base documentaire.
+</div>
+<h3>Filtrer l'historique</h3>
+<p>Utilisez le filtre par identifiant pour consulter l'activité d'un utilisateur précis (ex: en cas de doute sur un usage anormal du système).</p>
+<div class="card card-warn">
+  <strong>⚠️ Politique de rétention</strong> — Ce système ne purge pas automatiquement les anciens enregistrements. Une politique de rétention (durée de conservation, procédure d'archivage ou de suppression) doit être définie par la CI en cohérence avec la réglementation applicable, et documentée séparément.
+</div>
+</section>
+
+<section id="admin-securite">
+<h2>🔒 Sécurité et bonnes pratiques administrateur</h2>
+<ul>
+  <li><strong>Ne partagez jamais votre compte admin.</strong> Créez un compte nominatif par administrateur si plusieurs personnes de la CI ont besoin d'accéder au dashboard.</li>
+  <li><strong>Changez le mot de passe par défaut</strong> immédiatement après la première mise en service (voir Guide Technique, section Accès, pour les identifiants de démonstration — ils ne doivent jamais rester actifs en production).</li>
+  <li><strong>Vérifiez le manifeste d'accès après chaque upload</strong> de document sensible — une erreur de groupe est la cause la plus probable d'une fuite d'information accidentelle.</li>
+  <li><strong>Consultez régulièrement l'audit</strong> pour repérer un usage anormal (ex: un utilisateur qui pose un volume inhabituel de questions en peu de temps).</li>
+  <li><strong>Limitez la diffusion des tokens de connexion</strong> — la session expire automatiquement après un délai configuré (8h par défaut) ; ne prolongez pas cette durée sans raison opérationnelle claire.</li>
+</ul>
+</section>
+
+<section id="admin-depannage">
+<h2>🛠️ Dépannage courant</h2>
+<table>
+  <tr><th>Symptôme</th><th>Cause probable</th><th>Action</th></tr>
+  <tr><td>Un utilisateur ne voit aucun document</td><td>Aucun groupe ne correspond aux documents indexés, ou compte mal configuré</td><td>Vérifier les groupes de l'utilisateur et du manifeste d'accès</td></tr>
+  <tr><td>"Trop de tentatives de connexion"</td><td>Protection anti-bruteforce déclenchée (5 essais / 5 min)</td><td>Attendre le délai indiqué, ou vérifier que l'utilisateur n'a pas oublié son mot de passe</td></tr>
+  <tr><td>Réponse générique "je ne trouve pas cette information"</td><td>Aucun document pertinent indexé, ou question hors périmètre documentaire</td><td>Vérifier si le document existe et est bien indexé (Dashboard → Documents)</td></tr>
+  <tr><td>Upload échoue avec "format non supporté"</td><td>Fichier autre que PDF/DOCX/TXT, ou fichier corrompu</td><td>Convertir le fichier au bon format avant réessai</td></tr>
+  <tr><td>La transcription vocale échoue systématiquement</td><td>Micro de mauvaise qualité captant surtout du bruit ambiant</td><td>Recommander un micro-casque plutôt que le micro intégré de l'ordinateur</td></tr>
+  <tr><td>Document supprimé mais toujours cité dans les réponses</td><td>Ré-indexation complète non effectuée après suppression</td><td>Lancer "Ré-ingérer tout" depuis le Dashboard</td></tr>
+</table>
+<div class="card card-info">
+  <strong>ℹ️ Support de second niveau</strong> — Pour tout problème non résolu par ce tableau (erreurs techniques, panne serveur), reportez-vous au Guide Technique Complet ou contactez le prestataire technique du projet.
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════ PARTIE 2 : FORMATEUR ═══════════════════════════════════════════ -->
+<div class="part-divider">
+  <h2>PARTIE 2 — MANUEL FORMATEUR</h2>
+  <p>Accompagner les agents CAMRAIL dans la prise en main de KALATI</p>
+</div>
+
+<section id="formateur">
+<h2>🎯 Objectifs de la formation</h2>
+<p>À l'issue de la séance, chaque agent doit être capable de :</p>
+<ul>
+  <li>Se connecter à KALATI et comprendre à quels documents il a accès (et pourquoi)</li>
+  <li>Formuler une question efficace pour obtenir une réponse précise (prompt engineering de base)</li>
+  <li>Vérifier une réponse en consultant le document source cité</li>
+  <li>Reconnaître les limites du système (ce que KALATI ne peut pas faire)</li>
+  <li>Utiliser l'interface vocale si pertinent pour son poste</li>
+</ul>
+<h3>Public cible</h3>
+<p>Tout agent CAMRAIL disposant d'un compte KALATI. Aucun prérequis technique — la formation doit rester accessible à un public non-informaticien.</p>
+<h3>Durée recommandée</h3>
+<p>45 minutes à 1 heure : 15 min de présentation, 30 min de pratique guidée, 15 min de questions/réponses.</p>
+</section>
+
+<section id="formateur-seance">
+<h2>📅 Déroulé de séance type</h2>
+
+<h3>1. Introduction (10 min)</h3>
+<div class="card">
+<p>Expliquer en langage simple, sans jargon technique :</p>
+<ul>
+  <li><strong>Ce qu'est KALATI</strong> : un assistant qui répond aux questions en cherchant dans les vrais documents CAMRAIL (Convention Collective, IGS, modes opératoires...), pas en "inventant" une réponse.</li>
+  <li><strong>Pourquoi c'est fiable</strong> : chaque réponse indique le document source — l'agent peut toujours vérifier.</li>
+  <li><strong>Ce que KALATI n'est pas</strong> : ce n'est pas un moteur de recherche internet, ni un outil de décision automatique — c'est une aide à la recherche documentaire.</li>
+</ul>
+</div>
+
+<h3>2. Démonstration (10 min)</h3>
+<p>Le formateur pose lui-même 2-3 questions en direct devant le groupe, avec des exemples proches du métier des participants (voir exemples ci-dessous), en montrant explicitement :</p>
+<ul>
+  <li>Où et comment poser la question (zone de texte ou micro)</li>
+  <li>Comment lire la réponse et la source citée</li>
+  <li>Comment ouvrir/consulter le document source pour vérifier</li>
+</ul>
+
+<h3>3. Pratique guidée (25-30 min)</h3>
+<p>Chaque participant pose ses propres questions sur son compte, avec le formateur disponible pour aider. Exemples de questions à suggérer selon le métier :</p>
+<table>
+  <tr><th>Métier</th><th>Exemple de question</th></tr>
+  <tr><td>Tout agent</td><td>"Que dit la Convention Collective en matière de retraite ?"</td></tr>
+  <tr><td>Agent Sécurité</td><td>"Que prévoient les IGS sur la Marche à Vue ?"</td></tr>
+  <tr><td>Maintenance</td><td>"Comment révise-t-on un roulement de boîtes d'essieux ?"</td></tr>
+  <tr><td>Transport</td><td>"Comment expédier un train dans une gare ?"</td></tr>
+</table>
+
+<h3>4. Questions/réponses et clôture (10-15 min)</h3>
+<p>Recueillir les difficultés rencontrées, rappeler les points de contact (CI) pour tout problème de compte ou d'accès.</p>
+</section>
+
+<section id="formateur-prompt">
+<h2>💬 Initiation au prompt engineering</h2>
+<p>Le "prompt engineering" — bien formuler sa question — est explicitement demandé par le cahier des charges. Voici les points essentiels à transmettre aux agents, en langage simple.</p>
+
+<h3>Bonnes pratiques à enseigner</h3>
+<div class="grid2">
+  <div class="card card-success">
+    <h4>✅ Questions efficaces</h4>
+    <ul>
+      <li>Précises et complètes : "Quelle est la procédure de contrôle d'un circuit de voie ferrée ?"</li>
+      <li>Une seule question à la fois</li>
+      <li>Utiliser le vocabulaire métier habituel (KALATI le comprend)</li>
+    </ul>
+  </div>
+  <div class="card card-warn">
+    <h4>⚠️ Questions à éviter</h4>
+    <ul>
+      <li>Trop vagues : "Parle-moi des règlements"</li>
+      <li>Plusieurs questions mélangées en une seule phrase</li>
+      <li>Questions hors périmètre documentaire (actualités, calculs, sujets personnels)</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Que faire si la réponse ne convient pas</h3>
+<ol>
+  <li>Reformuler la question de façon plus précise ou avec d'autres mots</li>
+  <li>Vérifier que le document recherché existe bien dans le périmètre (l'agent n'a peut-être pas accès à ce document, ou il n'est pas encore indexé)</li>
+  <li>Si le document source cité ne correspond pas à la question, le signaler à la CI — cela peut indiquer un besoin d'ajuster l'indexation</li>
+</ol>
+
+<h3>Point de vigilance à transmettre</h3>
+<div class="card card-danger">
+  <strong>🚫 Ne jamais se fier aveuglément à une réponse touchant à la sécurité</strong> (ex: procédures de Marche à Vue, consignes de sécurité gare). Toujours vérifier le document source cité avant d'agir, en particulier pour tout ce qui concerne la sécurité des personnes et des circulations. KALATI est une aide à la recherche, pas une autorité réglementaire.
+</div>
+</section>
+
+<section id="formateur-faq">
+<h2>❓ FAQ à anticiper pendant la formation</h2>
+
+<p class="faq-q">Est-ce que KALATI peut se tromper ?</p>
+<p class="faq-a">Oui, comme tout système automatisé. C'est pourquoi chaque réponse cite sa source — le réflexe à transmettre est de toujours vérifier le document original en cas de doute, surtout sur les sujets sensibles.</p>
+
+<p class="faq-q">Pourquoi je ne vois pas tel document que je sais exister ?</p>
+<p class="faq-a">Chaque document est réservé à certains groupes de personnel selon sa confidentialité. Si un agent pense devoir avoir accès à un document, il doit en faire la demande à la Coordination Informatique.</p>
+
+<p class="faq-q">Mes questions sont-elles surveillées ?</p>
+<p class="faq-a">Oui, toutes les questions sont enregistrées dans un journal d'audit, à des fins de conformité et de contrôle — c'est une exigence réglementaire du projet, à annoncer clairement et sans ambiguïté pendant la formation pour que les agents l'utilisent en toute connaissance de cause.</p>
+
+<p class="faq-q">Est-ce que KALATI remplace mon supérieur ou le service concerné ?</p>
+<p class="faq-a">Non. KALATI aide à retrouver rapidement une information dans les textes normatifs, il ne remplace pas une validation humaine pour les décisions importantes.</p>
+
+<p class="faq-q">Que faire si le système est indisponible ou lent ?</p>
+<p class="faq-a">Contacter la Coordination Informatique. Les documents papier/officiels restent la référence en cas d'indisponibilité du système.</p>
+
+<div class="card card-info">
+  <strong>💡 Conseil pour le formateur</strong> — Gardez une trace des questions récurrentes posées lors des formations : elles permettent d'identifier les documents à enrichir en priorité, et d'améliorer les prochaines sessions.
+</div>
+</section>
+
+</main>
+<footer>
+  <p>KALATI RAG — Manuel Administrateur &amp; Formateur · CAMRAIL</p>
+</footer>
+</body>
+</html>

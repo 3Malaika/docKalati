@@ -6,6 +6,7 @@ import GuideTechnique, { GUIDE_SECTIONS } from './volets/GuideTechnique'
 import ManuelUtilisateur, { MANUEL_SECTIONS } from './volets/ManuelUtilisateur'
 import RapportConception, { RAPPORT_SECTIONS } from './volets/RapportConception'
 import TestRecette, { TEST_SECTIONS } from './volets/TestRecette'
+import AdminFormateur, { ADMIN_FORMATEUR_SECTIONS } from './volets/AdminFormateur'
 
 // ─── Tab Definition ───────────────────────────────────────────────────────────
 
@@ -37,6 +38,13 @@ const TABS = [
     subtitle: 'Validation & Recette',
     sections: TEST_SECTIONS,
     Component: TestRecette,
+  },
+  {
+    id: 'admin-formateur',
+    label: 'Admin & Formateur',
+    subtitle: 'Gestion & Formation',
+    sections: ADMIN_FORMATEUR_SECTIONS,
+    Component: AdminFormateur,
   },
 ]
 
@@ -257,6 +265,7 @@ export default function App() {
                 {activeTab === 'manuel'  && <ManuelUtilisateur />}
                 {activeTab === 'rapport' && <RapportConception />}
                 {activeTab === 'tests'   && <TestRecette />}
+                {activeTab === 'admin-formateur' && <AdminFormateur />}
               </div>
 
               {/* Bottom nav between documents */}
