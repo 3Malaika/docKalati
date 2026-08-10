@@ -34,11 +34,11 @@ export default function AdminFormateur() {
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div className="bg-white rounded-xl border border-[#d1d9e0] p-5 hover:border-[#e63329]/50 transition-all">
-            <p className="font-bold text-[#0f1923] mb-1">👤 Partie 1 — Administrateur</p>
+            <p className="font-bold text-[#0f1923] mb-1">Partie 1 — Administrateur</p>
             <p className="text-sm text-[#6b7a8d]">Destinée à la <strong>Coordination Informatique</strong>, seule habilitée à gérer les documents, les comptes et l'audit.</p>
           </div>
           <div className="bg-white rounded-xl border border-[#d1d9e0] p-5 hover:border-[#e63329]/50 transition-all">
-            <p className="font-bold text-[#0f1923] mb-1">🎓 Partie 2 — Formateur</p>
+            <p className="font-bold text-[#0f1923] mb-1">Partie 2 — Formateur</p>
             <p className="text-sm text-[#6b7a8d]">Destinée à toute personne accompagnant les agents CAMRAIL, y compris le prompt engineering.</p>
           </div>
         </div>
@@ -75,7 +75,7 @@ export default function AdminFormateur() {
           ))}
         </ul>
         <Card variant="warn">
-          <strong>⚠️ Responsabilité</strong> — Chaque action a un impact direct sur la confidentialité. Attribuer un mauvais groupe peut exposer des documents sensibles (RH, sécurité) à des personnes non autorisées.
+          <strong>Responsabilité</strong> — Chaque action a un impact direct sur la confidentialité. Attribuer un mauvais groupe peut exposer des documents sensibles (RH, sécurité) à des personnes non autorisées.
         </Card>
       </AnimSection>
 
@@ -90,7 +90,7 @@ export default function AdminFormateur() {
         <Step n={4} title="Envoi"><p className="text-sm text-[#6b7a8d]">Cliquez sur <strong>Envoyer</strong>. Le système indexe automatiquement — comptez quelques secondes à quelques minutes selon la taille et la présence de tableaux/images.</p></Step>
 
         <Card variant="warn">
-          <strong>⚠️ Choix des groupes — à ne jamais faire à la légère</strong>
+          <strong>Choix des groupes — à ne jamais faire à la légère</strong>
           <p className="mt-2 text-sm">Un document sans groupe sélectionné n'est visible <strong>que par les administrateurs</strong> (sécurité par défaut). Si un document doit être visible par Sécurité ET Transport, cochez les deux groupes — un oubli le rendra invisible pour l'un des deux services.</p>
         </Card>
 
@@ -103,7 +103,7 @@ export default function AdminFormateur() {
         <H3>Ré-indexation complète</H3>
         <p className="text-sm text-[#374151] mb-3">Dashboard Admin → Documents → <strong>Ré-ingérer tout</strong>. À utiliser après suppression d'un document sensible, ou en cas de doute sur la cohérence de l'index.</p>
         <Card variant="warn">
-          <strong>⚠️ Durée</strong> — Sur un corpus volumineux, cela peut prendre plusieurs minutes. Évitez de lancer cette opération en heure de forte affluence.
+          <strong>Durée</strong> — Sur un corpus volumineux, cela peut prendre plusieurs minutes. Évitez de lancer cette opération en heure de forte affluence.
         </Card>
       </AnimSection>
 
@@ -138,12 +138,12 @@ export default function AdminFormateur() {
         <SectionHeading icon={<BarChart3 size={20} />}>Audit et historique</SectionHeading>
         <p className="text-[#374151] leading-relaxed mb-4">Dashboard Admin → Audit. Chaque question y est enregistrée avec date, heure, identifiant, groupes, la question, la réponse et les sources.</p>
         <Card variant="success">
-          <strong>✅ Pourquoi c'est important</strong> — Cet historique répond à l'exigence de traçabilité : en cas de doute sur la fiabilité d'une réponse, vous pouvez retracer exactement ce qui a été demandé et sur quelle base documentaire.
+          <strong>Pourquoi c'est important</strong> — Cet historique répond à l'exigence de traçabilité : en cas de doute sur la fiabilité d'une réponse, vous pouvez retracer exactement ce qui a été demandé et sur quelle base documentaire.
         </Card>
         <H3>Filtrer l'historique</H3>
         <p className="text-sm text-[#374151] mb-4">Utilisez le filtre par identifiant pour consulter l'activité d'un utilisateur précis, en cas de doute sur un usage anormal.</p>
         <Card variant="warn">
-          <strong>⚠️ Politique de rétention</strong> — Définissez une politique de rétention (durée de conservation, procédure d'archivage) en cohérence avec la réglementation applicable.
+          <strong>Politique de rétention</strong> — Définissez une politique de rétention (durée de conservation, procédure d'archivage) en cohérence avec la réglementation applicable.
         </Card>
       </AnimSection>
 
@@ -264,7 +264,7 @@ export default function AdminFormateur() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <Card variant="success">
-            <h4 className="font-bold text-sm text-[#0f1923] mb-2">✅ Questions efficaces</h4>
+            <h4 className="font-bold text-sm text-[#0f1923] mb-2">Questions efficaces</h4>
             <ul className="text-xs space-y-1 text-[#6b7a8d] list-disc list-inside">
               <li>Précises et complètes</li>
               <li>Une seule question à la fois</li>
@@ -272,7 +272,7 @@ export default function AdminFormateur() {
             </ul>
           </Card>
           <Card variant="warn">
-            <h4 className="font-bold text-sm text-[#0f1923] mb-2">⚠️ Questions à éviter</h4>
+            <h4 className="font-bold text-sm text-[#0f1923] mb-2">Questions à éviter</h4>
             <ul className="text-xs space-y-1 text-[#6b7a8d] list-disc list-inside">
               <li>Trop vagues</li>
               <li>Plusieurs questions mélangées</li>
@@ -289,7 +289,7 @@ export default function AdminFormateur() {
         </ol>
 
         <Card variant="danger">
-          <strong>🚫 Point de vigilance critique</strong>
+          <strong>Point de vigilance critique</strong>
           <p className="mt-2 text-sm">Ne jamais se fier aveuglément à une réponse touchant à la sécurité (Marche à Vue, consignes gare). <strong>Toujours vérifier le document source cité avant d'agir.</strong> KALATI est une aide à la recherche, pas une autorité réglementaire.</p>
         </Card>
       </AnimSection>
@@ -330,7 +330,7 @@ export default function AdminFormateur() {
         ))}
 
         <Card variant="info">
-          <strong>💡 Conseil pour le formateur</strong> — Gardez une trace des questions récurrentes : elles permettent d'identifier les documents à enrichir et d'améliorer les prochaines sessions.
+          <strong>Conseil pour le formateur</strong> — Gardez une trace des questions récurrentes : elles permettent d'identifier les documents à enrichir et d'améliorer les prochaines sessions.
         </Card>
       </AnimSection>
     </div>
