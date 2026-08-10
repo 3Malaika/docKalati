@@ -305,42 +305,31 @@ export function exportPDF(root: HTMLElement, title: string) {
         break
 
       case 'image': {
-        // Images en PDF via URL/base64
+        // Images en PDF via URL/base64 — constante pour éviter l'étirement
         try {
           y += 8
-          // Pour les petites images : limiter la largeur et laisser jsPDF calculer la hauteur
-          // Pour les grandes : utiliser la largeur max et jsPDF ajustera la hauteur
-          const maxW = CW * 0.75
-          const minW = CW * 0.4 // largeur minimale pour les petites images
           
-          // Estimer la largeur en fonction de la résolution de l'image
-          // Les petites images (screenshots) sont généralement ~800-1000px de large
-          // Les grandes sont ~1200px+
-          // On réduit proportionne lllement
-          const imgW = maxW // toutes les images à max, jsPDF garde le ratio
+          // Largeur fixe pour toutes les images : 70% de la largeur utile
+          // Cela maintient le ratio aspect et évite l'étirement
+          const imgW = CW * 0.7
+          const imgH = imgW * 0.5625 // ratio 16:9 par défaut (pour compatibility)
           
-          // jsPDF.addImage(imageData, format, x, y, width, height)
-          // Si height n'est pas spécifié, jsPDF le calcule automatiquement selon le ratio
-          fit(200) // réserver un espace min, sera ajusté après
-          
-          doc.addImage(b.src, 'PNG', MX + (CW - imgW) / 2, y, imgW) // pas de height = auto
-          
-          // Après ajout, récupérer la hauteur réelle de l'image
-          // (jsPDF ne l'expose pas directement, donc on estime)
-          const imgH = imgW * 0.6 // ratio estimé 16:9 / 4:3 mixte
+          fit(imgH + 30)
+          // Centrer horizontalement
+          const xPos = MX + (CW - imgW) / 2
+          doc.addImage(b.src, 'PNG', xPos, y, imgW, imgH)
           y += imgH + 10
           
           if (b.caption) {
             doc.setFont('helvetica', 'italic'); doc.setFontSize(8)
             doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
             const lines: string[] = doc.splitTextToSize(b.caption, imgW)
-            for (const ln of lines) { doc.text(ln, MX + (CW - imgW) / 2, y); y += 10 }
+            for (const ln of lines) { doc.text(ln, xPos, y); y += 10 }
           }
           y += 4
           doc.setFont('helvetica', 'normal')
           doc.setTextColor(R.body[0], R.body[1], R.body[2])
         } catch (e) {
-          // En cas d'erreur d'image, afficher un texte de remplacement
           write(`[Image non disponible : ${b.alt}]`, 9, false, R.gray, 0, 6)
         }
         break
