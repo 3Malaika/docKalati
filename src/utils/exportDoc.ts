@@ -122,19 +122,18 @@ async function extractBlocks(root: HTMLElement): Promise<Block[]> {
 }
 
 // ── Textes recommandation de stage ───────────────────────────────────────────
-const REC_TITLE = 'Recommandation — Implémentation du mode local'
+const REC_TITLE = 'Demande de Stage — 6 mois à partir de mars'
 const REC_INTRO =
-  "KALATI RAG est pleinement fonctionnel en mode cloud (démonstration). La prochaine " +
-  "étape critique pour la mise en production réelle chez CAMRAIL est le déploiement " +
-  "entièrement local : remplacement de Groq par Ollama, intégration de Whisper offline " +
-  "pour la transcription vocale, et Piper TTS pour la synthèse audio — garantissant " +
-  "qu'aucune donnée CAMRAIL ne transite hors de l'infrastructure interne."
+  "KALATI RAG est une application développée dans le cadre de ma scolarité en tant que " +
+  "projet académique en informatique. Afin de valider ma 5ème année et de consolider mes " +
+  "compétences en développement logiciel, une période de stage de 6 mois est obligatoire " +
+  "dans mon cursus d'ingénieur."
 const REC_BODY =
-  "Il est vivement recommandé de confier cette phase à Babouma Malaika, étudiante en " +
-  "5ème année Cycle Ingénieur — Management des Systèmes d'Information à Saint Jean " +
-  "Ingénieur, conceptrice et développeuse de l'intégralité de ce système. Elle maîtrise " +
-  "l'architecture complète, le contexte métier CAMRAIL, et les outils requis " +
-  "(FastAPI, Ollama, Whisper, Piper TTS, ChromaDB, Next.js)."
+  "Je serais ravi d'avoir l'opportunité de réaliser ce stage au sein de votre organisation " +
+  "à partir de mars. Ce projet m'a permis de développer une expérience pratique en " +
+  "architecture logicielle, intégration d'APIs, et gestion de données. Je serais " +
+  "enthousiaste de mettre ces compétences au service de vos projets et d'apprendre " +
+  "des pratiques professionnelles en environnement réel."
 const REC_CONTACTS = [
   "Téléphone : 696 784 809",
   "Email     : babouma.suzanne@saintjeaningenieur.org",
