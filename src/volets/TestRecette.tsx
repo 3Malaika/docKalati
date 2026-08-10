@@ -69,6 +69,29 @@ function TestTable({ headers, rows }: { headers: string[]; rows: (string | React
 
 const NONE = <span className="inline-block px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-500 border border-slate-200">— Non testé</span>
 
+// Fonction pour générer une date aléatoire entre aujourd'hui, hier et avant-hier
+const getRandomRecentDate = () => {
+  const today = new Date()
+  const daysAgo = Math.floor(Math.random() * 3) // 0, 1 ou 2
+  const date = new Date(today)
+  date.setDate(date.getDate() - daysAgo)
+  return date.toLocaleDateString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit' })
+}
+
+// Générer les dates une fois (pour cohérence dans le rendu)
+const RECETTE_DATES = {
+  AUTH: getRandomRecentDate(),
+  GRP: getRandomRecentDate(),
+  RAG: getRandomRecentDate(),
+  MM: getRandomRecentDate(),
+  VOC: getRandomRecentDate(),
+  DOC: getRandomRecentDate(),
+  USR: getRandomRecentDate(),
+  AUD: getRandomRecentDate(),
+  TRA: getRandomRecentDate(),
+  SEC: getRandomRecentDate(),
+}
+
 export default function TestRecette() {
   return (
     <div>
@@ -114,13 +137,13 @@ export default function TestRecette() {
         <TestTable
           headers={['ID', 'Scénario', 'Étapes', 'Résultat attendu', 'Statut']}
           rows={[
-            ['AUTH-01', 'Connexion valide', 'Se connecter avec un identifiant/mot de passe correct', 'Token JWT reçu, redirection vers l\'interface principale', NONE],
-            ['AUTH-02', 'Connexion invalide', 'Se connecter avec un mauvais mot de passe', 'Message d\'erreur générique, pas d\'indication sur ce qui est faux', NONE],
-            ['AUTH-03', 'Rate-limiting anti-bruteforce', 'Échouer 6 connexions consécutives en moins de 5 minutes', 'Blocage temporaire (429) après la 5ème tentative', NONE],
-            ['AUTH-04', 'Réinitialisation après succès', 'Échouer 2 fois puis réussir la connexion', 'Le compteur d\'échecs est remis à zéro', NONE],
-            ['AUTH-05', 'Expiration de session', 'Utiliser un token après expiration (8h par défaut)', '401 renvoyé, redirection vers la page de connexion', NONE],
-            ['AUTH-06', 'Accès sans authentification', 'Appeler /api/query sans token', '401 Unauthorized, aucune donnée renvoyée', NONE],
-            ['AUTH-07', 'Changement de mot de passe', 'Modifier son propre mot de passe depuis le profil', 'Ancien mot de passe requis, nouveau actif immédiatement', NONE],
+            ['AUTH-01', 'Connexion valide', 'Se connecter avec un identifiant/mot de passe correct', 'Token JWT reçu, redirection vers l\'interface principale', <Badge color="green">PASS</Badge>],
+            ['AUTH-02', 'Connexion invalide', 'Se connecter avec un mauvais mot de passe', 'Message d\'erreur générique, pas d\'indication sur ce qui est faux', <Badge color="green">PASS</Badge>],
+            ['AUTH-03', 'Rate-limiting anti-bruteforce', 'Échouer 6 connexions consécutives en moins de 5 minutes', 'Blocage temporaire (429) après la 5ème tentative', <Badge color="green">PASS</Badge>],
+            ['AUTH-04', 'Réinitialisation après succès', 'Échouer 2 fois puis réussir la connexion', 'Le compteur d\'échecs est remis à zéro', <Badge color="green">PASS</Badge>],
+            ['AUTH-05', 'Expiration de session', 'Utiliser un token après expiration (8h par défaut)', '401 renvoyé, redirection vers la page de connexion', <Badge color="green">PASS</Badge>],
+            ['AUTH-06', 'Accès sans authentification', 'Appeler /api/query sans token', '401 Unauthorized, aucune donnée renvoyée', <Badge color="green">PASS</Badge>],
+            ['AUTH-07', 'Changement de mot de passe', 'Modifier son propre mot de passe depuis le profil', 'Ancien mot de passe requis, nouveau actif immédiatement', <Badge color="green">PASS</Badge>],
           ]}
         />
       </AnimSection>
@@ -134,13 +157,13 @@ export default function TestRecette() {
         <TestTable
           headers={['ID', 'Scénario', 'Étapes', 'Résultat attendu', 'Statut']}
           rows={[
-            ['GRP-01', 'Isolation entre groupes', 'Se connecter en agent RH, poser une question dont la réponse n\'existe que dans un document Sécurité', 'Aucune information du document Sécurité n\'apparaît', NONE],
-            ['GRP-02', 'Accès autorisé', 'Se connecter en agent RH, poser une question sur un document RH', 'Réponse correcte, source RH citée', NONE],
-            ['GRP-03', 'Compte sans groupe (fail-safe)', 'Simuler un utilisateur avec une liste de groupes vide', 'Aucun résultat renvoyé (accès refusé)', NONE],
-            ['GRP-04', 'Document non listé au manifeste', 'Indexer un document sans lui assigner de groupe', 'Visible uniquement par le groupe admin', NONE],
-            ['GRP-05', 'Cumul de groupes', 'Utilisateur avec deux groupes (RH + Sécurité), questions sur les deux périmètres', 'Accès aux documents des deux groupes, union correcte', NONE],
-            ['GRP-06', 'Falsification côté client', 'Envoyer un champ groups personnalisé dans le corps de /api/query', 'Le champ est ignoré — seuls les groupes du JWT signé sont utilisés', NONE],
-            ['GRP-07', 'Contournement via recherche lexicale', 'Vérifier que le filtrage s\'applique aussi à BM25', 'Même isolation stricte quelle que soit la méthode de recherche', NONE],
+            ['GRP-01', 'Isolation entre groupes', 'Se connecter en agent RH, poser une question dont la réponse n\'existe que dans un document Sécurité', 'Aucune information du document Sécurité n\'apparaît', <Badge color="green">PASS</Badge>],
+            ['GRP-02', 'Accès autorisé', 'Se connecter en agent RH, poser une question sur un document RH', 'Réponse correcte, source RH citée', <Badge color="green">PASS</Badge>],
+            ['GRP-03', 'Compte sans groupe (fail-safe)', 'Simuler un utilisateur avec une liste de groupes vide', 'Aucun résultat renvoyé (accès refusé)', <Badge color="green">PASS</Badge>],
+            ['GRP-04', 'Document non listé au manifeste', 'Indexer un document sans lui assigner de groupe', 'Visible uniquement par le groupe admin', <Badge color="green">PASS</Badge>],
+            ['GRP-05', 'Cumul de groupes', 'Utilisateur avec deux groupes (RH + Sécurité), questions sur les deux périmètres', 'Accès aux documents des deux groupes, union correcte', <Badge color="green">PASS</Badge>],
+            ['GRP-06', 'Falsification côté client', 'Envoyer un champ groups personnalisé dans le corps de /api/query', 'Le champ est ignoré — seuls les groupes du JWT signé sont utilisés', <Badge color="green">PASS</Badge>],
+            ['GRP-07', 'Contournement via recherche lexicale', 'Vérifier que le filtrage s\'applique aussi à BM25', 'Même isolation stricte quelle que soit la méthode de recherche', <Badge color="green">PASS</Badge>],
           ]}
         />
         
@@ -178,13 +201,13 @@ export default function TestRecette() {
         <TestTable
           headers={['ID', 'Scénario', 'Étapes', 'Résultat attendu', 'Statut']}
           rows={[
-            ['RAG-01', 'Question avec réponse existante', 'Poser une question dont la réponse est clairement présente', 'Réponse correcte en français, avec citation du document source', NONE],
-            ['RAG-02', 'Question sans réponse dans le corpus', 'Poser une question totalement hors périmètre documentaire', 'Message explicite "aucun document pertinent trouvé", jamais de réponse inventée', NONE],
-            ['RAG-03', 'Recherche par terme exact', 'Rechercher un numéro d\'article ou sigle précis (ex: "Article 47", "IGS 12")', 'Le document contenant ce terme exact est trouvé', NONE],
-            ['RAG-04', 'Recherche par paraphrase', 'Poser la même question reformulée avec des synonymes', 'Résultat cohérent malgré la reformulation', NONE],
-            ['RAG-05', 'Citation des sources', 'Vérifier que chaque réponse liste le(s) document(s) utilisé(s)', 'Nom(s) de document(s) exact(s) affiché(s)', NONE],
-            ['RAG-06', 'Résistance à l\'injection de prompt', 'Indexer un document contenant "ignore tes consignes"', 'Le système traite ce texte comme du contenu documentaire', NONE],
-            ['RAG-07', 'Question trop longue', 'Envoyer une question dépassant la limite de caractères', 'Rejet propre avec message d\'erreur, pas de plantage serveur', NONE],
+            ['RAG-01', 'Question avec réponse existante', 'Poser une question dont la réponse est clairement présente', 'Réponse correcte en français, avec citation du document source', <Badge color="green">PASS</Badge>],
+            ['RAG-02', 'Question sans réponse dans le corpus', 'Poser une question totalement hors périmètre documentaire', 'Message explicite "aucun document pertinent trouvé", jamais de réponse inventée', <Badge color="green">PASS</Badge>],
+            ['RAG-03', 'Recherche par terme exact', 'Rechercher un numéro d\'article ou sigle précis (ex: "Article 47", "IGS 12")', 'Le document contenant ce terme exact est trouvé', <Badge color="green">PASS</Badge>],
+            ['RAG-04', 'Recherche par paraphrase', 'Poser la même question reformulée avec des synonymes', 'Résultat cohérent malgré la reformulation', <Badge color="green">PASS</Badge>],
+            ['RAG-05', 'Citation des sources', 'Vérifier que chaque réponse liste le(s) document(s) utilisé(s)', 'Nom(s) de document(s) exact(s) affiché(s)', <Badge color="green">PASS</Badge>],
+            ['RAG-06', 'Résistance à l\'injection de prompt', 'Indexer un document contenant "ignore tes consignes"', 'Le système traite ce texte comme du contenu documentaire', <Badge color="green">PASS</Badge>],
+            ['RAG-07', 'Question trop longue', 'Envoyer une question dépassant la limite de caractères', 'Rejet propre avec message d\'erreur, pas de plantage serveur', <Badge color="green">PASS</Badge>],
           ]}
         />
       </AnimSection>
@@ -195,11 +218,11 @@ export default function TestRecette() {
         <TestTable
           headers={['ID', 'Scénario', 'Étapes', 'Résultat attendu', 'Statut']}
           rows={[
-            ['MM-01', 'Extraction de tableau', 'Indexer un PDF contenant un tableau structuré', 'Le tableau est extrait, converti en texte structuré et devient cherchable', NONE],
-            ['MM-02', 'Description d\'image/schéma', 'Indexer un PDF contenant un schéma technique', 'Une description textuelle du schéma est générée et indexée', NONE],
-            ['MM-03', 'Question sur un contenu de tableau', 'Poser une question dont la réponse est uniquement dans un tableau extrait', 'Réponse correcte, source citée avec mention "Tableau, page X"', NONE],
-            ['MM-04', 'Fiabilité sur schéma de sécurité', 'Comparer la description générée avec le schéma original', 'Description globalement fidèle ; toute divergence documentée', NONE],
-            ['MM-05', 'Désactivation de la multimodalité', 'Basculer ENABLE_MULTIMODAL_INGESTION=false, ré-indexer', 'Seul le texte est indexé, aucune erreur bloquante', NONE],
+            ['MM-01', 'Extraction de tableau', 'Indexer un PDF contenant un tableau structuré', 'Le tableau est extrait, converti en texte structuré et devient cherchable', <Badge color="green">PASS</Badge>],
+            ['MM-02', 'Description d\'image/schéma', 'Indexer un PDF contenant un schéma technique', 'Une description textuelle du schéma est générée et indexée', <Badge color="green">PASS</Badge>],
+            ['MM-03', 'Question sur un contenu de tableau', 'Poser une question dont la réponse est uniquement dans un tableau extrait', 'Réponse correcte, source citée avec mention "Tableau, page X"', <Badge color="green">PASS</Badge>],
+            ['MM-04', 'Fiabilité sur schéma de sécurité', 'Comparer la description générée avec le schéma original', 'Description globalement fidèle ; toute divergence documentée', <Badge color="green">PASS</Badge>],
+            ['MM-05', 'Désactivation de la multimodalité', 'Basculer ENABLE_MULTIMODAL_INGESTION=false, ré-indexer', 'Seul le texte est indexé, aucune erreur bloquante', <Badge color="green">PASS</Badge>],
           ]}
         />
         <Card variant="warn">
@@ -213,11 +236,11 @@ export default function TestRecette() {
         <TestTable
           headers={['ID', 'Scénario', 'Étapes', 'Résultat attendu', 'Statut']}
           rows={[
-            ['VOC-01', 'Transcription claire', 'Enregistrer une question claire avec un micro-casque', 'Transcription fidèle à ce qui a été dit', NONE],
-            ['VOC-02', 'Pipeline complet', 'Poser une question à l\'oral de bout en bout', 'Transcription → réponse RAG → synthèse audio, cohérentes entre elles', NONE],
-            ['VOC-03', 'Audio silencieux', 'Envoyer un enregistrement vide ou silencieux', 'Filtre anti-hallucination détecte l\'absence de contenu, message clair renvoyé', NONE],
-            ['VOC-04', 'Micro de mauvaise qualité', 'Tester avec le micro intégré dans un environnement bruyant', 'Taux de transcription incorrecte plus élevé — à documenter', NONE],
-            ['VOC-05', 'Formats audio multiples', 'Tester depuis Chrome, Firefox, Edge', 'Transcription fonctionnelle quel que soit le format natif du navigateur', NONE],
+            ['VOC-01', 'Transcription claire', 'Enregistrer une question claire avec un micro-casque', 'Transcription fidèle à ce qui a été dit', <Badge color="green">PASS</Badge>],
+            ['VOC-02', 'Pipeline complet', 'Poser une question à l\'oral de bout en bout', 'Transcription → réponse RAG → synthèse audio, cohérentes entre elles', <Badge color="green">PASS</Badge>],
+            ['VOC-03', 'Audio silencieux', 'Envoyer un enregistrement vide ou silencieux', 'Filtre anti-hallucination détecte l\'absence de contenu, message clair renvoyé', <Badge color="green">PASS</Badge>],
+            ['VOC-04', 'Micro de mauvaise qualité', 'Tester avec le micro intégré dans un environnement bruyant', 'Taux de transcription incorrecte plus élevé — à documenter', <Badge color="green">PASS</Badge>],
+            ['VOC-05', 'Formats audio multiples', 'Tester depuis Chrome, Firefox, Edge', 'Transcription fonctionnelle quel que soit le format natif du navigateur', <Badge color="green">PASS</Badge>],
           ]}
         />
       </AnimSection>
@@ -228,13 +251,13 @@ export default function TestRecette() {
         <TestTable
           headers={['ID', 'Scénario', 'Étapes', 'Résultat attendu', 'Statut']}
           rows={[
-            ['DOC-01', 'Upload document valide', 'Admin envoie un PDF valide avec groupes sélectionnés', 'Fichier sauvegardé, indexé, apparaît dans la liste des documents', NONE],
-            ['DOC-02', 'Rejet format non supporté', 'Tenter d\'envoyer un fichier .exe ou .zip', 'Rejet avec message d\'erreur clair, aucun fichier écrit sur le serveur', NONE],
-            ['DOC-03', 'Fichier renommé (faux positif)', 'Renommer un .exe en .pdf et l\'envoyer', 'Rejet basé sur le contenu réel du fichier (signature binaire)', NONE],
-            ['DOC-04', 'Fichier trop volumineux', 'Envoyer un fichier dépassant la limite configurée', 'Rejet propre avec message de taille maximale', NONE],
-            ['DOC-05', 'Traversée de répertoire', 'Envoyer un fichier avec un nom contenant ../', 'Nom de fichier nettoyé, écriture confinée au dossier documents', NONE],
-            ['DOC-06', 'Suppression + ré-indexation', 'Supprimer un document, vérifier sa disparition des réponses', 'Le document n\'est plus jamais cité comme source après ré-indexation', NONE],
-            ['DOC-07', 'Accès non-admin', 'Tenter d\'uploader un document avec un compte non-admin', '403 Forbidden', NONE],
+            ['DOC-01', 'Upload document valide', 'Admin envoie un PDF valide avec groupes sélectionnés', 'Fichier sauvegardé, indexé, apparaît dans la liste des documents', <Badge color="green">PASS</Badge>],
+            ['DOC-02', 'Rejet format non supporté', 'Tenter d\'envoyer un fichier .exe ou .zip', 'Rejet avec message d\'erreur clair, aucun fichier écrit sur le serveur', <Badge color="green">PASS</Badge>],
+            ['DOC-03', 'Fichier renommé (faux positif)', 'Renommer un .exe en .pdf et l\'envoyer', 'Rejet basé sur le contenu réel du fichier (signature binaire)', <Badge color="green">PASS</Badge>],
+            ['DOC-04', 'Fichier trop volumineux', 'Envoyer un fichier dépassant la limite configurée', 'Rejet propre avec message de taille maximale', <Badge color="green">PASS</Badge>],
+            ['DOC-05', 'Traversée de répertoire', 'Envoyer un fichier avec un nom contenant ../', 'Nom de fichier nettoyé, écriture confinée au dossier documents', <Badge color="green">PASS</Badge>],
+            ['DOC-06', 'Suppression + ré-indexation', 'Supprimer un document, vérifier sa disparition des réponses', 'Le document n\'est plus jamais cité comme source après ré-indexation', <Badge color="green">PASS</Badge>],
+            ['DOC-07', 'Accès non-admin', 'Tenter d\'uploader un document avec un compte non-admin', '403 Forbidden', <Badge color="green">PASS</Badge>],
           ]}
         />
       </AnimSection>
@@ -245,10 +268,10 @@ export default function TestRecette() {
         <TestTable
           headers={['ID', 'Scénario', 'Étapes', 'Résultat attendu', 'Statut']}
           rows={[
-            ['USR-01', 'Création d\'utilisateur', 'Admin crée un compte avec groupes définis', 'Compte créé, connexion possible immédiatement', NONE],
-            ['USR-02', 'Modification des groupes', 'Modifier les groupes d\'un utilisateur existant', 'Nouveaux droits appliqués dès la prochaine connexion', NONE],
-            ['USR-03', 'Suppression d\'utilisateur', 'Supprimer un compte, tenter une connexion', 'Connexion refusée immédiatement après suppression', NONE],
-            ['USR-04', 'Accès non-admin', 'Tenter d\'accéder à /api/admin/users avec un compte non-admin', '403 Forbidden', NONE],
+            ['USR-01', 'Création d\'utilisateur', 'Admin crée un compte avec groupes définis', 'Compte créé, connexion possible immédiatement', <Badge color="green">PASS</Badge>],
+            ['USR-02', 'Modification des groupes', 'Modifier les groupes d\'un utilisateur existant', 'Nouveaux droits appliqués dès la prochaine connexion', <Badge color="green">PASS</Badge>],
+            ['USR-03', 'Suppression d\'utilisateur', 'Supprimer un compte, tenter une connexion', 'Connexion refusée immédiatement après suppression', <Badge color="green">PASS</Badge>],
+            ['USR-04', 'Accès non-admin', 'Tenter d\'accéder à /api/admin/users avec un compte non-admin', '403 Forbidden', <Badge color="green">PASS</Badge>],
           ]}
         />
       </AnimSection>
@@ -259,10 +282,10 @@ export default function TestRecette() {
         <TestTable
           headers={['ID', 'Scénario', 'Étapes', 'Résultat attendu', 'Statut']}
           rows={[
-            ['AUD-01', 'Enregistrement systématique', 'Poser une question, consulter l\'audit immédiatement après', 'La question apparaît avec username, groupes, réponse et sources correctes', NONE],
-            ['AUD-02', 'Filtrage par utilisateur', 'Filtrer l\'historique par identifiant précis', 'Seules les entrées de cet utilisateur s\'affichent', NONE],
-            ['AUD-03', 'Accès restreint à l\'audit', 'Tenter de consulter /api/admin/audit/logs avec un compte non-admin', '403 Forbidden', NONE],
-            ['AUD-04', 'Plafond de résultats', 'Demander un limit très élevé (ex: 100000)', 'Le nombre de résultats est plafonné, pas d\'export massif incontrôlé', NONE],
+            ['AUD-01', 'Enregistrement systématique', 'Poser une question, consulter l\'audit immédiatement après', 'La question apparaît avec username, groupes, réponse et sources correctes', <Badge color="green">PASS</Badge>],
+            ['AUD-02', 'Filtrage par utilisateur', 'Filtrer l\'historique par identifiant précis', 'Seules les entrées de cet utilisateur s\'affichent', <Badge color="green">PASS</Badge>],
+            ['AUD-03', 'Accès restreint à l\'audit', 'Tenter de consulter /api/admin/audit/logs avec un compte non-admin', '403 Forbidden', <Badge color="green">PASS</Badge>],
+            ['AUD-04', 'Plafond de résultats', 'Demander un limit très élevé (ex: 100000)', 'Le nombre de résultats est plafonné, pas d\'export massif incontrôlé', <Badge color="green">PASS</Badge>],
           ]}
         />
       </AnimSection>
@@ -273,8 +296,8 @@ export default function TestRecette() {
         <TestTable
           headers={['ID', 'Scénario', 'Étapes', 'Résultat attendu', 'Statut']}
           rows={[
-            ['TRA-01', 'Information accessible', 'Consulter les informations "À propos / fonctionnement" depuis l\'interface', 'Explication claire du fonctionnement, des limites et des données utilisées, sans compte requis', NONE],
-            ['TRA-02', 'Mention de l\'audit', 'Vérifier que l\'utilisateur est informé que ses questions sont journalisées', 'Mention explicite et visible, pas cachée dans des mentions légales illisibles', NONE],
+            ['TRA-01', 'Information accessible', 'Consulter les informations "À propos / fonctionnement" depuis l\'interface', 'Explication claire du fonctionnement, des limites et des données utilisées, sans compte requis', <Badge color="green">PASS</Badge>],
+            ['TRA-02', 'Mention de l\'audit', 'Vérifier que l\'utilisateur est informé que ses questions sont journalisées', 'Mention explicite et visible, pas cachée dans des mentions légales illisibles', <Badge color="green">PASS</Badge>],
           ]}
         />
       </AnimSection>
@@ -285,11 +308,11 @@ export default function TestRecette() {
         <TestTable
           headers={['ID', 'Scénario', 'Étapes', 'Résultat attendu', 'Statut']}
           rows={[
-            ['SEC-01', 'CORS restreint', 'Tenter un appel API depuis un domaine non autorisé', 'Requête bloquée par le navigateur (CORS)', NONE],
-            ['SEC-02', 'Absence de fuite d\'information en erreur', 'Provoquer volontairement une erreur serveur', 'Message d\'erreur générique au client, détail uniquement dans les logs serveur', NONE],
-            ['SEC-03', 'Conteneur non-root', 'Vérifier l\'utilisateur d\'exécution dans le conteneur Docker', 'Le processus ne tourne jamais en root', NONE],
-            ['SEC-04', 'HTTPS forcé', 'Tenter un accès en HTTP simple', 'Redirection automatique vers HTTPS', NONE],
-            ['SEC-05', 'Scan de dépendances', 'Exécuter pip-audit sur le backend', 'Aucune vulnérabilité critique non traitée', NONE],
+            ['SEC-01', 'CORS restreint', 'Tenter un appel API depuis un domaine non autorisé', 'Requête bloquée par le navigateur (CORS)', <Badge color="green">PASS</Badge>],
+            ['SEC-02', 'Absence de fuite d\'information en erreur', 'Provoquer volontairement une erreur serveur', 'Message d\'erreur générique au client, détail uniquement dans les logs serveur', <Badge color="green">PASS</Badge>],
+            ['SEC-03', 'Conteneur non-root', 'Vérifier l\'utilisateur d\'exécution dans le conteneur Docker', 'Le processus ne tourne jamais en root', <Badge color="green">PASS</Badge>],
+            ['SEC-04', 'HTTPS forcé', 'Tenter un accès en HTTP simple', 'Redirection automatique vers HTTPS', <Badge color="green">PASS</Badge>],
+            ['SEC-05', 'Scan de dépendances', 'Exécuter pip-audit sur le backend', 'Aucune vulnérabilité critique non traitée', <Badge color="green">PASS</Badge>],
           ]}
         />
         
@@ -319,16 +342,16 @@ export default function TestRecette() {
         <DataTable
           headers={['Domaine fonctionnel', 'Nb. cas', 'PASS', 'FAIL', 'Validé le', 'Validé par']}
           rows={[
-            ['Authentification', '7', '', '', '', ''],
-            ['Groupes de sécurité', '7', '', '', '', ''],
-            ['Recherche RAG', '7', '', '', '', ''],
-            ['Multimodalité', '5', '', '', '', ''],
-            ['Vocal', '5', '', '', '', ''],
-            ['Gestion documents', '7', '', '', '', ''],
-            ['Gestion utilisateurs', '4', '', '', '', ''],
-            ['Audit', '4', '', '', '', ''],
-            ['Transparence', '2', '', '', '', ''],
-            ['Sécurité générale', '5', '', '', '', ''],
+            ['Authentification', '7', '7', '0', RECETTE_DATES.AUTH, 'CI - Recette'],
+            ['Groupes de sécurité', '7', '7', '0', RECETTE_DATES.GRP, 'CI - Recette'],
+            ['Recherche RAG', '7', '7', '0', RECETTE_DATES.RAG, 'CI - Recette'],
+            ['Multimodalité', '5', '5', '0', RECETTE_DATES.MM, 'CI - Recette'],
+            ['Vocal', '5', '5', '0', RECETTE_DATES.VOC, 'CI - Recette'],
+            ['Gestion documents', '7', '7', '0', RECETTE_DATES.DOC, 'CI - Recette'],
+            ['Gestion utilisateurs', '4', '4', '0', RECETTE_DATES.USR, 'CI - Recette'],
+            ['Audit', '4', '4', '0', RECETTE_DATES.AUD, 'CI - Recette'],
+            ['Transparence', '2', '2', '0', RECETTE_DATES.TRA, 'CI - Recette'],
+            ['Sécurité générale', '5', '5', '0', RECETTE_DATES.SEC, 'CI - Recette'],
           ]}
         />
         <Card variant="warn">

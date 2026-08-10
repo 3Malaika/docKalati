@@ -308,13 +308,28 @@ export function exportPDF(root: HTMLElement, title: string) {
         // Images en PDF via URL/base64
         try {
           y += 8
-          const imgW = Math.min(400, CW * 0.8)
-          const imgH = 250 // ratio 16:10 approximatif
-          fit(imgH + 40)
-          // Note: jsPDF ne peut afficher que des images URL ou base64
-          // Les images importées doivent être converties en URL via URL.createObjectURL()
-          doc.addImage(b.src, 'PNG', MX + (CW - imgW) / 2, y, imgW, imgH)
+          // Pour les petites images : limiter la largeur et laisser jsPDF calculer la hauteur
+          // Pour les grandes : utiliser la largeur max et jsPDF ajustera la hauteur
+          const maxW = CW * 0.75
+          const minW = CW * 0.4 // largeur minimale pour les petites images
+          
+          // Estimer la largeur en fonction de la résolution de l'image
+          // Les petites images (screenshots) sont généralement ~800-1000px de large
+          // Les grandes sont ~1200px+
+          // On réduit proportionne lllement
+          const imgW = maxW // toutes les images à max, jsPDF garde le ratio
+          
+          // jsPDF.addImage(imageData, format, x, y, width, height)
+          // Si height n'est pas spécifié, jsPDF le calcule automatiquement selon le ratio
+          fit(200) // réserver un espace min, sera ajusté après
+          
+          doc.addImage(b.src, 'PNG', MX + (CW - imgW) / 2, y, imgW) // pas de height = auto
+          
+          // Après ajout, récupérer la hauteur réelle de l'image
+          // (jsPDF ne l'expose pas directement, donc on estime)
+          const imgH = imgW * 0.6 // ratio estimé 16:9 / 4:3 mixte
           y += imgH + 10
+          
           if (b.caption) {
             doc.setFont('helvetica', 'italic'); doc.setFontSize(8)
             doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
