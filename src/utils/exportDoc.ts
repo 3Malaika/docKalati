@@ -33,6 +33,7 @@ type Block =
   | { type: 'bullet'; text: string }
   | { type: 'code'; text: string }
   | { type: 'table'; headers: string[]; rows: string[][] }
+  | { type: 'image'; src: string; alt: string; caption?: string }
 
 const clean = (s: string | null | undefined) =>
   (s ?? '').replace(/\s+/g, ' ').trim()
@@ -63,6 +64,14 @@ function extractBlocks(root: HTMLElement): Block[] {
           Array.from(tr.querySelectorAll('td')).map(td => clean(td.textContent))
         )
         if (headers.length || rows.length) blocks.push({ type: 'table', headers, rows })
+      } else if (tag === 'figure' || tag === 'img') {
+        const img = tag === 'figure' ? child.querySelector('img') : (child as HTMLImageElement)
+        if (img) {
+          const src = img.getAttribute('src') || ''
+          const alt = img.getAttribute('alt') || ''
+          const figcap = child.querySelector('figcaption')?.textContent
+          if (src) blocks.push({ type: 'image', src, alt, caption: figcap })
+        }
       } else {
         walk(child)
       }
@@ -294,6 +303,33 @@ export function exportPDF(root: HTMLElement, title: string) {
       case 'table':
         drawTable(b.headers, b.rows)
         break
+
+      case 'image': {
+        // Images en PDF via URL/base64
+        try {
+          y += 8
+          const imgW = Math.min(400, CW * 0.8)
+          const imgH = 250 // ratio 16:10 approximatif
+          fit(imgH + 40)
+          // Note: jsPDF ne peut afficher que des images URL ou base64
+          // Les images importées doivent être converties en URL via URL.createObjectURL()
+          doc.addImage(b.src, 'PNG', MX + (CW - imgW) / 2, y, imgW, imgH)
+          y += imgH + 10
+          if (b.caption) {
+            doc.setFont('helvetica', 'italic'); doc.setFontSize(8)
+            doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
+            const lines: string[] = doc.splitTextToSize(b.caption, imgW)
+            for (const ln of lines) { doc.text(ln, MX + (CW - imgW) / 2, y); y += 10 }
+          }
+          y += 4
+          doc.setFont('helvetica', 'normal')
+          doc.setTextColor(R.body[0], R.body[1], R.body[2])
+        } catch (e) {
+          // En cas d'erreur d'image, afficher un texte de remplacement
+          write(`[Image non disponible : ${b.alt}]`, 9, false, R.gray, 0, 6)
+        }
+        break
+      }
     }
   }
 
@@ -440,6 +476,16 @@ export async function exportDOCX(root: HTMLElement, title: string) {
           ch.push(docxTable(b.headers, b.rows))
           ch.push(new Paragraph({ text: '', spacing: { before: 60, after: 200 } }))
         }
+        break
+
+      case 'image':
+        // Pour les images en DOCX, créer un paragraphe de substitution
+        // (docx.js ne supporte pas facilement les images dataURL/importées sans conversion)
+        ch.push(new Paragraph({
+          children: [new TextRun({ text: `[Image : ${b.alt}]${b.caption ? ` — ${b.caption}` : ''}`, italic: true, size: 18, color: H.gray })],
+          spacing: { before: 160, after: 160 },
+          alignment: 'center' as any,
+        }))
         break
     }
   }

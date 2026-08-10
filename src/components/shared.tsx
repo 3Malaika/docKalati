@@ -265,3 +265,34 @@ export function ExampleBox({
     </div>
   )
 }
+
+// ─── Screenshot Block ────────────────────────────────────────────────────────
+export function ScreenshotBlock({
+  src,
+  alt,
+  caption,
+  width = 600,
+}: {
+  src: string
+  alt: string
+  caption?: string
+  width?: number
+}) {
+  return (
+    <figure className="my-6 text-center">
+      <div className="rounded-xl border border-[#d1d9e0] overflow-hidden shadow-sm bg-white inline-block">
+        <img
+          src={src}
+          alt={alt}
+          style={{ maxWidth: `${width}px`, width: '100%', height: 'auto' }}
+          className="block"
+        />
+      </div>
+      {caption && (
+        <figcaption className="text-xs text-[#6b7a8d] mt-2 italic">
+          {caption}
+        </figcaption>
+      )}
+    </figure>
+  )
+}

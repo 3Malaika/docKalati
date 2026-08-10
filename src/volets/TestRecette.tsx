@@ -2,8 +2,27 @@ import {
   Target, Ruler, KeyRound, Lock, Search, Image, Mic,
   FileText, Users, ClipboardList, Eye, Shield, CheckSquare
 } from 'lucide-react'
-import { Badge, Card, SectionHeading, H3, DataTable, AnimSection } from '../components/shared'
+import { Badge, Card, SectionHeading, H3, DataTable, AnimSection, ScreenshotBlock } from '../components/shared'
 import type { ReactNode } from 'react'
+
+// Imports des images de test
+import GRP_1 from '../camrail/GRP_1.png'
+import GRP_02 from '../camrail/GRP-02.png'
+import GRP_03 from '../camrail/GRP-03.png'
+import GRP_04_0 from '../camrail/GRP-04-0.png'
+import GRP_04 from '../camrail/GRP-04.png'
+import GRP_05_0 from '../camrail/GRP-05-0.png'
+import GRP_05_01 from '../camrail/GRP-05-01.png'
+import GRP_05_02 from '../camrail/GRP-05-02.png'
+import GRP_06_0 from '../camrail/GRP-06-0.png'
+import GRP_06_1 from '../camrail/GRP-06-1.png'
+import GRP_07 from '../camrail/GRP-07.png'
+import SEC_02_1 from '../camrail/SEC-02-1.png'
+import SEC_02_2 from '../camrail/SEC-02-2.png'
+import SEC_03 from '../camrail/SEC-03.png'
+import SEC_04_0 from '../camrail/SEC-04-0.png'
+import SEC_04_1 from '../camrail/SEC-04-1.png'
+import SEC_05 from '../camrail/SEC-05.png'
 
 export const TEST_SECTIONS = [
   { id: 'objectif',    label: 'Objectif' },
@@ -124,6 +143,33 @@ export default function TestRecette() {
             ['GRP-07', 'Contournement via recherche lexicale', 'Vérifier que le filtrage s\'applique aussi à BM25', 'Même isolation stricte quelle que soit la méthode de recherche', NONE],
           ]}
         />
+        
+        <H3>Captures explicatives — Scénarios de test Groupes (GRP)</H3>
+        
+        <p className="text-sm text-[#374151] mb-3"><strong>GRP-01 — Isolation entre groupes :</strong> Vérifier qu'un agent RH ne voit aucun document Sécurité.</p>
+        <ScreenshotBlock src={GRP_1} alt="GRP-01 : Isolation entre groupes" caption="Écran de test : agent RH isolé du contenu Sécurité" />
+        
+        <p className="text-sm text-[#374151] mb-3"><strong>GRP-02 — Accès autorisé :</strong> Vérifier qu'un agent RH voit les documents RH avec les bonnes sources.</p>
+        <ScreenshotBlock src={GRP_02} alt="GRP-02 : Accès autorisé" caption="Écran de test : agent RH accédant aux documents RH avec source citée" />
+        
+        <p className="text-sm text-[#374151] mb-3"><strong>GRP-03 — Compte sans groupe :</strong> Vérifier le comportement fail-safe (refus d'accès).</p>
+        <ScreenshotBlock src={GRP_03} alt="GRP-03 : Compte sans groupe (fail-safe)" caption="Écran de test : compte sans groupe, refus d'accès (comportement de sécurité attendu)" />
+        
+        <p className="text-sm text-[#374151] mb-3"><strong>GRP-04 — Document non listé au manifeste :</strong> Vérifier que le document est réservé aux admins.</p>
+        <ScreenshotBlock src={GRP_04_0} alt="GRP-04 : Document non listé - avant" caption="État initial : document sans entrée au manifeste" />
+        <ScreenshotBlock src={GRP_04} alt="GRP-04 : Document non listé - visibilité admin" caption="Vérification : seul l'admin accède au document" />
+        
+        <p className="text-sm text-[#374151] mb-3"><strong>GRP-05 — Cumul de groupes :</strong> Vérifier qu'un utilisateur avec plusieurs groupes voit l'union des documents.</p>
+        <ScreenshotBlock src={GRP_05_0} alt="GRP-05 : Cumul de groupes - configuration" caption="Configuration : utilisateur avec groupes RH + Sécurité" />
+        <ScreenshotBlock src={GRP_05_01} alt="GRP-05 : Cumul de groupes - accès RH" caption="Vérification : accès aux documents RH" />
+        <ScreenshotBlock src={GRP_05_02} alt="GRP-05 : Cumul de groupes - accès Sécurité" caption="Vérification : accès aussi aux documents Sécurité (union correcte)" />
+        
+        <p className="text-sm text-[#374151] mb-3"><strong>GRP-06 — Falsification côté client :</strong> Vérifier que le champ groups personnalisé est ignoré.</p>
+        <ScreenshotBlock src={GRP_06_0} alt="GRP-06 : Tentative de falsification" caption="Tentative de falsification du champ groups dans la requête API" />
+        <ScreenshotBlock src={GRP_06_1} alt="GRP-06 : Falsification bloquée" caption="Résultat : champ ignoré, seuls les groupes du JWT signé sont utilisés" />
+        
+        <p className="text-sm text-[#374151] mb-3"><strong>GRP-07 — Contournement via recherche lexicale :</strong> Vérifier que le filtrage s'applique aussi à BM25.</p>
+        <ScreenshotBlock src={GRP_07} alt="GRP-07 : Filtrage BM25" caption="Vérification : même isolation stricte via recherche lexicale (BM25)" />
       </AnimSection>
 
       {/* RAG */}
@@ -246,6 +292,22 @@ export default function TestRecette() {
             ['SEC-05', 'Scan de dépendances', 'Exécuter pip-audit sur le backend', 'Aucune vulnérabilité critique non traitée', NONE],
           ]}
         />
+        
+        <H3>Captures explicatives — Scénarios de test Sécurité (SEC)</H3>
+        
+        <p className="text-sm text-[#374151] mb-3"><strong>SEC-02 — Absence de fuite d'information en erreur :</strong> Vérifier que les messages d'erreur ne divulguent pas de détails techniques au client.</p>
+        <ScreenshotBlock src={SEC_02_1} alt="SEC-02 : Erreur serveur - vue client" caption="Vue client : message d'erreur générique sans détails techniques" />
+        <ScreenshotBlock src={SEC_02_2} alt="SEC-02 : Erreur serveur - détails logs" caption="Vue serveur (logs) : détails complets de l'erreur enregistrés à titre interne" />
+        
+        <p className="text-sm text-[#374151] mb-3"><strong>SEC-03 — Conteneur non-root :</strong> Vérifier que le processus s'exécute avec un utilisateur sans privilèges.</p>
+        <ScreenshotBlock src={SEC_03} alt="SEC-03 : Vérification utilisateur conteneur" caption="Vérification : processus KALATI en exécution sous utilisateur non-root (sécurité renforcée)" />
+        
+        <p className="text-sm text-[#374151] mb-3"><strong>SEC-04 — HTTPS forcé :</strong> Vérifier la redirection automatique de HTTP vers HTTPS.</p>
+        <ScreenshotBlock src={SEC_04_0} alt="SEC-04 : Tentative HTTP" caption="Tentative d'accès en HTTP simple" />
+        <ScreenshotBlock src={SEC_04_1} alt="SEC-04 : Redirection HTTPS" caption="Résultat : redirection automatique vers HTTPS (connexion sécurisée)" />
+        
+        <p className="text-sm text-[#374151] mb-3"><strong>SEC-05 — Scan de dépendances :</strong> Vérifier qu'aucune vulnérabilité critique n'est présente.</p>
+        <ScreenshotBlock src={SEC_05} alt="SEC-05 : Résultat du scan pip-audit" caption="Résultat du scan : aucune vulnérabilité critique détectée" />
       </AnimSection>
 
       {/* GRILLE DE RECETTE */}
