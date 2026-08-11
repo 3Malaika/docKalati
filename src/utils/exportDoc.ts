@@ -592,7 +592,37 @@ async function docxImage(src: string, alt: string, maxWidthPx = 560): Promise<Pa
 }
 
 export async function exportDOCX(root: HTMLElement, title: string) {
-  const blocks = await extractBlocks(root)
+  // Dynamic import of html2canvas
+  const html2canvas = (await import('html2canvas')).default
+
+  // Capture the entire HTML as an image
+  const canvas = await html2canvas(root, {
+    scale: 2,
+    backgroundColor: '#FFFFFF',
+    useCORS: true,
+    allowTaint: false,
+  })
+
+  const imgDataUrl = canvas.toDataURL('image/png')
+  const base64 = imgDataUrl.includes(',') ? imgDataUrl.split(',')[1] : imgDataUrl
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+
+  // Calculate dimensions to fit on A4
+  // A4 is 210mm x 297mm, with 25mm margins = 160mm x 247mm usable
+  // 1mm ≈ 37.795 twips
+  const canvasW = canvas.width
+  const canvasH = canvas.height
+  const ratio = canvasH / canvasW
+
+  // Max width in pixels at scale 2 (accounting for 1-inch margins on each side)
+  const maxWidthPx = 560 * 2 // scaled
+  const imgW = Math.min(canvasW, maxWidthPx)
+  const imgH = imgW * ratio
+
   type Child = Paragraph | Table
   const ch: Child[] = []
 
@@ -605,49 +635,21 @@ export async function exportDOCX(root: HTMLElement, title: string) {
       children: [new TextRun({ text: 'KALATI RAG — Documentation technique · CAMRAIL', size: 18, color: H.gray, font: 'Calibri' })],
       spacing: { after: 300 },
     }),
+    new Paragraph({
+      children: [
+        new ImageRun({
+          type: 'png',
+          data: bytes,
+          transformation: {
+            width: 560,
+            height: Math.round(560 * ratio),
+          },
+        }),
+      ],
+      spacing: { after: 300 },
+      alignment: AlignmentType.CENTER,
+    }),
   )
-
-  for (const b of blocks) {
-    switch (b.type) {
-      case 'heading':
-        ch.push(docxHeading(b.level, b.text))
-        break
-      case 'paragraph':
-        ch.push(docxParagraph(b.text))
-        break
-      case 'bullet':
-        ch.push(docxBullet(b.text))
-        break
-      case 'code':
-        ch.push(...docxCode(b.text))
-        break
-      case 'table':
-        if (b.headers.length || b.rows.length) ch.push(docxTable(b.headers, b.rows))
-        break
-      case 'image': {
-        const p = await docxImage(b.src, b.alt)
-        if (p) ch.push(p)
-        if (b.caption) {
-          ch.push(new Paragraph({
-            children: [new TextRun({ text: b.caption, italics: true, size: 16, color: H.gray })],
-            spacing: { after: 200 },
-            alignment: AlignmentType.CENTER,
-          }))
-        }
-        break
-      }
-      case 'separator':
-        ch.push(new Paragraph({
-          children: [],
-          border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: H.border } },
-          spacing: { after: 200 },
-        }))
-        break
-      case 'card':
-        ch.push(docxCard(b.variant, b.title, b.content))
-        break
-    }
-  }
 
   // Section stage
   ch.push(
