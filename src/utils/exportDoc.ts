@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf'
 import {
-  Document, Packer, Paragraph, TextRun, HeadingLevel,
+  Document, Packer, Paragraph, TextRun, ImageRun,
   Table, TableRow, TableCell, WidthType, BorderStyle,
   ShadingType, convertInchesToTwip,
 } from 'docx'
@@ -24,6 +24,7 @@ const H: Record<string, string> = {
   brand: 'E63329', ink: '0F1923', navy: '1A2E4A',
   gray: '6B7A8D', body: '374151', border: 'D1D9E0',
   surface: 'F4F6F9', stripe: 'F8FAFC', white: 'FFFFFF', black: '0D1117',
+  codebg: '0D1117', codefg: 'E6EDF3',
 }
 
 // ── Modèle de blocs ───────────────────────────────────────────────────────────
@@ -35,7 +36,7 @@ type Block =
   | { type: 'code'; text: string }
   | { type: 'table'; headers: string[]; rows: string[][]; badges?: (string | BadgeColor)[][] }
   | { type: 'image'; src: string; alt: string; caption?: string; width: number; height: number }
-  | { type: 'separator'; }
+  | { type: 'separator' }
   | { type: 'card'; variant: 'info' | 'warning' | 'success' | 'error'; title?: string; content: string }
   | { type: 'steps'; steps: { n: number; title: string; content: string }[] }
   | { type: 'list'; items: string[] }
@@ -46,7 +47,7 @@ const clean = (s: string | null | undefined) =>
 function loadImage(src: string): Promise<{ dataUrl: string; width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const img = new Image()
-    
+
     img.onload = () => {
       if (src.startsWith('data:')) {
         resolve({ dataUrl: src, width: img.naturalWidth, height: img.naturalHeight })
@@ -63,7 +64,7 @@ function loadImage(src: string): Promise<{ dataUrl: string; width: number; heigh
         }
       }
     }
-    
+
     img.onerror = () => reject(new Error(`Impossible de charger l'image: ${src}`))
     img.crossOrigin = 'anonymous'
     img.src = src
@@ -72,28 +73,33 @@ function loadImage(src: string): Promise<{ dataUrl: string; width: number; heigh
 
 async function extractBlocks(root: HTMLElement): Promise<Block[]> {
   const blocks: Block[] = []
-  
+
   const walk = async (node: Element) => {
     for (const child of Array.from(node.children)) {
       const tag = child.tagName.toLowerCase()
-      
-      // Ignorer les éléments de présentation
+
       if (tag === 'button' || tag === 'svg' || tag === 'path' || tag === 'script' || tag === 'style') continue
-      
-      const classList = child.className || ''
+
+      // CORRECTIF : classes EXACTES (après split sur les espaces), jamais des
+      // sous-chaînes. L'ancien code (classList.includes('hidden')) matchait
+      // aussi "overflow-hidden", "sm:hidden", etc. — des classes Tailwind très
+      // courantes, sans rapport avec un masquage permanent du contenu — ce qui
+      // excluait silencieusement des sections entières de l'export.
+      const classes = (child.className || '').toString().trim().split(/\s+/)
       const id = child.id || ''
-      if (classList.includes('fixed') || classList.includes('absolute') || classList.includes('hidden') || 
-          id.includes('nav') || id.includes('menu') || classList.includes('sidebar')) {
-        continue
-      }
-      
+      const isExcluded =
+        classes.some(c => c === 'fixed' || c === 'absolute' || c === 'hidden' || c === 'sidebar') ||
+        id.includes('nav') || id.includes('menu')
+
+      if (isExcluded) continue
+
       if (/^h[1-4]$/.test(tag)) {
         const text = clean(Array.from(child.childNodes)
           .filter(n => n.nodeType === 3)
           .map(n => n.textContent)
           .join('') || child.textContent)
         if (text && text.length > 0) {
-          blocks.push({ type: 'heading', level: +tag[1] as 1|2|3|4, text })
+          blocks.push({ type: 'heading', level: +tag[1] as 1 | 2 | 3 | 4, text })
         }
       } else if (tag === 'p') {
         const text = clean(child.textContent)
@@ -118,7 +124,6 @@ async function extractBlocks(root: HTMLElement): Promise<Block[]> {
           const src = img.getAttribute('src') || ''
           const alt = img.getAttribute('alt') || ''
           const figcap = child.querySelector('figcaption')?.textContent
-          // Ignorer les images SVG/vecteur
           if (src && !src.includes('.svg')) {
             try {
               const { dataUrl, width, height } = await loadImage(src)
@@ -128,14 +133,14 @@ async function extractBlocks(root: HTMLElement): Promise<Block[]> {
             }
           }
         }
-      } else if (tag === 'hr' || classList.includes('border') || classList.includes('h-px')) {
+      } else if (tag === 'hr' || classes.includes('border') || classes.includes('h-px')) {
         blocks.push({ type: 'separator' })
       } else {
         await walk(child)
       }
     }
   }
-  
+
   await walk(root)
   return blocks
 }
@@ -162,14 +167,14 @@ const REC_CONTACTS = [
 const triggerDownload = (blob: Blob, filename: string) => {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = url ; a.download = filename
-  document.body.appendChild(a) ; a.click() ; a.remove()
+  a.href = url; a.download = filename
+  document.body.appendChild(a); a.click(); a.remove()
   URL.revokeObjectURL(url)
 }
 
 const slug = (s: string) =>
   s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-   .replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PDF — Reproduction fidèle du design HTML
@@ -184,11 +189,9 @@ export async function exportPDF(root: HTMLElement, title: string) {
   const CW = PW - MX * 2
   let y = MT
 
-  // Helpers
   const np = () => { doc.addPage(); y = MT }
   const fit = (n: number) => { if (y + n > PH - MB) np() }
 
-  // Écriture de texte
   const write = (
     text: string,
     size: number,
@@ -206,7 +209,6 @@ export async function exportPDF(root: HTMLElement, title: string) {
     y += gap
   }
 
-  // Bandeau titre
   doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
   doc.rect(0, 0, PW, 88, 'F')
   doc.setFont('helvetica', 'bold'); doc.setFontSize(24); doc.setTextColor(255, 255, 255)
@@ -215,10 +217,9 @@ export async function exportPDF(root: HTMLElement, title: string) {
   doc.text('KALATI RAG — Documentation technique · CAMRAIL', MX, 70)
   y = 108
 
-  // Boucle principale
   for (let i = 0; i < blocks.length; i++) {
     const b = blocks[i]
-    
+
     switch (b.type) {
       case 'heading': {
         if (b.level === 1) {
@@ -293,14 +294,13 @@ export async function exportPDF(root: HTMLElement, title: string) {
         const colCount = b.headers.length || b.rows[0]?.length || 1
         const colW = CW / colCount
         const FSIZE = 8, PADX = 3, PADY = 3, LH = FSIZE * 1.2
-        
+
         const measureH = (text: string): number => {
           doc.setFontSize(FSIZE)
           const lines = doc.splitTextToSize(text, colW - PADX * 2)
           return lines.length * LH + PADY * 2
         }
-        
-        // Entête
+
         if (b.headers.length) {
           const rh = Math.max(...b.headers.map(measureH), LH + PADY * 2)
           fit(rh)
@@ -320,8 +320,7 @@ export async function exportPDF(root: HTMLElement, title: string) {
           }
           y += rh
         }
-        
-        // Corps
+
         b.rows.forEach((row, ri) => {
           const rh = Math.max(...row.map(measureH), LH + PADY * 2)
           fit(rh)
@@ -354,11 +353,11 @@ export async function exportPDF(root: HTMLElement, title: string) {
         if (Math.abs(ratio - 1) < 0.15) imgW = CW * 0.5
         else if (ratio > 1.3) imgW = CW * 0.4
         else if (ratio < 0.7) imgW = CW * 0.85
-        
+
         const imgH = imgW * ratio
         fit(imgH + 15)
         const xPos = MX + (CW - imgW) / 2
-        
+
         try {
           doc.addImage(b.src, 'PNG', xPos, y, imgW, imgH)
           y += imgH + 6
@@ -389,7 +388,6 @@ export async function exportPDF(root: HTMLElement, title: string) {
     }
   }
 
-  // Section stage
   y += 12; fit(180)
   doc.setFillColor(R.navy[0], R.navy[1], R.navy[2])
   doc.rect(MX, y, CW, 26, 'F')
@@ -399,7 +397,7 @@ export async function exportPDF(root: HTMLElement, title: string) {
 
   write("Contexte et motivation", 10, true, R.navy, 0, 4)
   write(REC_INTRO, 9, false, R.body, 0, 8)
-  
+
   write("Proposition de stage", 10, true, R.navy, 0, 4)
   write(REC_BODY, 9, false, R.body, 0, 10)
 
@@ -408,7 +406,6 @@ export async function exportPDF(root: HTMLElement, title: string) {
     write(line, 9, false, R.body, 10, 3)
   }
 
-  // Pied de page
   const total = doc.getNumberOfPages()
   for (let p = 1; p <= total; p++) {
     doc.setPage(p)
@@ -421,9 +418,12 @@ export async function exportPDF(root: HTMLElement, title: string) {
   doc.save(`${slug(title)}.pdf`)
 }
 
-
 // ═══════════════════════════════════════════════════════════════════════════════
-// DOCX — Reproduction fidèle du HTML
+// DOCX — Reconstruit à partir des mêmes blocs que le PDF (extractBlocks).
+// CORRECTIF : l'ancienne version capturait une image via html2canvas mais ne
+// l'insérait JAMAIS dans le document — seul un texte placeholder était ajouté.
+// Cette version construit le document Word avec le contenu réel (titres,
+// paragraphes, listes, tableaux, images, séparateurs), comme le fait le PDF.
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const CELL_BORDERS = {
@@ -459,7 +459,7 @@ function docxCard(variant: 'info' | 'warning' | 'success' | 'error', title: stri
     error: { bg: 'FEE2E2', border: 'EF4444', text: '1F2937' },
   }
   const cfg = colors[variant]
-  
+
   return new Paragraph({
     children: [new TextRun({
       text: title ? `${title}: ${content}` : content,
@@ -473,13 +473,98 @@ function docxCard(variant: 'info' | 'warning' | 'success' | 'error', title: stri
   })
 }
 
-export async function exportDOCX(root: HTMLElement, title: string) {
-  const { default: html2canvas } = await import('html2canvas')
+function docxHeading(level: 1 | 2 | 3 | 4, text: string): Paragraph {
+  return new Paragraph({ style: `Heading${level}`, children: [new TextRun({ text })] })
+}
 
+function docxParagraph(text: string): Paragraph {
+  return new Paragraph({
+    children: [new TextRun({ text, size: 20, font: 'Calibri', color: H.body })],
+    spacing: { after: 160 },
+  })
+}
+
+function docxBullet(text: string): Paragraph {
+  return new Paragraph({
+    children: [new TextRun({ text, size: 20, font: 'Calibri', color: H.body })],
+    bullet: { level: 0 },
+    spacing: { after: 60 },
+  })
+}
+
+function docxCode(text: string): Paragraph[] {
+  return text.split('\n').map(line => new Paragraph({
+    children: [new TextRun({ text: line || ' ', font: 'Consolas', size: 18, color: H.codefg })],
+    shading: { type: ShadingType.SOLID, fill: H.codebg, color: H.codebg },
+    spacing: { after: 0 },
+  }))
+}
+
+function docxTable(headers: string[], rows: string[][]): Table {
+  const colCount = headers.length || rows[0]?.length || 1
+  const colWidth = Math.floor(9000 / colCount)
+
+  const headerRow = new TableRow({
+    children: headers.map(h => new TableCell({
+      width: { size: colWidth, type: WidthType.DXA },
+      shading: { type: ShadingType.SOLID, fill: H.border, color: H.border },
+      borders: CELL_BORDERS,
+      children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 18, color: H.body })] })],
+    })),
+  })
+
+  const bodyRows = rows.map((row, ri) => new TableRow({
+    children: row.map(cell => new TableCell({
+      width: { size: colWidth, type: WidthType.DXA },
+      shading: ri % 2 === 1
+        ? { type: ShadingType.SOLID, fill: H.stripe, color: H.stripe }
+        : undefined,
+      borders: CELL_BORDERS,
+      children: [new Paragraph({ children: [new TextRun({ text: cell, size: 18, color: H.body })] })],
+    })),
+  }))
+
+  return new Table({
+    width: { size: 9000, type: WidthType.DXA },
+    rows: headers.length ? [headerRow, ...bodyRows] : bodyRows,
+  })
+}
+
+async function docxImage(src: string, alt: string, maxWidthPx = 560): Promise<Paragraph | null> {
+  try {
+    const base64 = src.split(',')[1]
+    if (!base64) return null
+    const binary = atob(base64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+
+    const dims = await new Promise<{ w: number; h: number }>((resolve) => {
+      const img = new Image()
+      img.onload = () => resolve({ w: img.naturalWidth || maxWidthPx, h: img.naturalHeight || maxWidthPx })
+      img.onerror = () => resolve({ w: maxWidthPx, h: maxWidthPx })
+      img.src = src
+    })
+
+    const ratio = dims.h / dims.w
+    const width = Math.min(maxWidthPx, dims.w)
+    const height = Math.round(width * ratio)
+
+    return new Paragraph({
+      children: [new ImageRun({ data: bytes, transformation: { width, height } })],
+      spacing: { after: 160 },
+      alignment: 'center' as any,
+    })
+  } catch (e) {
+    console.error('[export] image ignorée dans le DOCX:', alt, e)
+    return null
+  }
+}
+
+export async function exportDOCX(root: HTMLElement, title: string) {
+  const blocks = await extractBlocks(root)
   type Child = Paragraph | Table
   const ch: Child[] = []
 
-  // En-tête
   ch.push(
     new Paragraph({
       children: [new TextRun({ text: title, bold: true, size: 52, color: H.brand, font: 'Calibri' })],
@@ -491,89 +576,48 @@ export async function exportDOCX(root: HTMLElement, title: string) {
     }),
   )
 
-  // Capturer le contenu HTML en image
-  try {
-    const canvas = await html2canvas(root, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#ffffff',
-    })
-    
-    const imgData = canvas.toDataURL('image/png')
-    
-    // Calculer les dimensions pour l'insertion
-    // A4 = 210mm, marges = 25mm de chaque côté = 160mm de largeur utile
-    const pageWidth = 210 * 2.834645669 // 210mm en 1/96 inch * 96 / 72 * 72 = points
-    const pageHeight = 297 * 2.834645669
-    const usableWidth = 160 * 2.834645669 // 160mm en points
-    const usableHeight = pageHeight - 100
-    
-    const imgAspect = canvas.width / canvas.height
-    let finalWidth = usableWidth
-    let finalHeight = finalWidth / imgAspect
-    
-    if (finalHeight > usableHeight) {
-      finalHeight = usableHeight
-      finalWidth = finalHeight * imgAspect
+  for (const b of blocks) {
+    switch (b.type) {
+      case 'heading':
+        ch.push(docxHeading(b.level, b.text))
+        break
+      case 'paragraph':
+        ch.push(docxParagraph(b.text))
+        break
+      case 'bullet':
+        ch.push(docxBullet(b.text))
+        break
+      case 'code':
+        ch.push(...docxCode(b.text))
+        break
+      case 'table':
+        if (b.headers.length || b.rows.length) ch.push(docxTable(b.headers, b.rows))
+        break
+      case 'image': {
+        const p = await docxImage(b.src, b.alt)
+        if (p) ch.push(p)
+        if (b.caption) {
+          ch.push(new Paragraph({
+            children: [new TextRun({ text: b.caption, italic: true, size: 16, color: H.gray })],
+            spacing: { after: 200 },
+            alignment: 'center' as any,
+          }))
+        }
+        break
+      }
+      case 'separator':
+        ch.push(new Paragraph({
+          children: [],
+          border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: H.border } },
+          spacing: { after: 200 },
+        }))
+        break
+      case 'card':
+        ch.push(docxCard(b.variant, b.title, b.content))
+        break
     }
-
-    // Insérer l'image
-    ch.push(new Paragraph({
-      children: [
-        new TextRun({
-          text: '',
-          break: 1,
-        }),
-      ],
-    }))
-
-    // Créer une table pour insérer l'image
-    const imageCell = new TableCell({
-      borders: {
-        top: { style: BorderStyle.NONE, size: 0 },
-        bottom: { style: BorderStyle.NONE, size: 0 },
-        left: { style: BorderStyle.NONE, size: 0 },
-        right: { style: BorderStyle.NONE, size: 0 },
-      },
-      width: { size: 100, type: WidthType.PERCENTAGE },
-      children: [
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: '',
-            }),
-          ],
-        }),
-      ],
-    })
-
-    // Utiliser une approche simple : insérer le paragraphe avec run qui contient l'image
-    // Note: docx.js a des limitations pour les images. On va juste ajouter du texte explicatif
-    ch.push(new Paragraph({
-      children: [new TextRun({
-        text: '[Contenu capturé depuis la page HTML - veuillez consulter la version HTML pour la mise en forme complète]',
-        italic: true,
-        size: 18,
-        color: H.gray,
-      })],
-      spacing: { before: 160, after: 160 },
-    }))
-
-  } catch (e) {
-    console.error('Erreur lors de la capture:', e)
-    ch.push(new Paragraph({
-      children: [new TextRun({
-        text: '[Erreur lors de la capture du contenu]',
-        italic: true,
-        size: 18,
-        color: 'EF4444',
-      })],
-      spacing: { before: 160, after: 160 },
-    }))
   }
 
-  // Section stage
   ch.push(
     new Paragraph({ text: '', spacing: { before: 600, after: 0 } }),
     new Paragraph({
@@ -602,7 +646,6 @@ export async function exportDOCX(root: HTMLElement, title: string) {
       spacing: { before: 120, after: 120 },
     }),
   )
-
   for (const ln of REC_CONTACTS) {
     ch.push(new Paragraph({
       children: [new TextRun({ text: ln, size: 20, font: 'Calibri', color: H.body })],
@@ -611,31 +654,22 @@ export async function exportDOCX(root: HTMLElement, title: string) {
     }))
   }
 
-  // Document final
   const document = new Document({
     styles: {
       default: { document: { run: { font: 'Calibri', size: 20, color: H.body } } },
       paragraphStyles: [
-        {
-          id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal',
+        { id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal',
           run: { bold: true, size: 32, color: H.brand, font: 'Calibri' },
-          paragraph: { spacing: { before: 400, after: 140 }, border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: H.brand } } },
-        },
-        {
-          id: 'Heading2', name: 'Heading 2', basedOn: 'Normal', next: 'Normal',
+          paragraph: { spacing: { before: 400, after: 140 }, border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: H.brand } } } },
+        { id: 'Heading2', name: 'Heading 2', basedOn: 'Normal', next: 'Normal',
           run: { bold: true, size: 26, color: H.navy, font: 'Calibri' },
-          paragraph: { spacing: { before: 280, after: 80 }, border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: H.border } } },
-        },
-        {
-          id: 'Heading3', name: 'Heading 3', basedOn: 'Normal', next: 'Normal',
+          paragraph: { spacing: { before: 280, after: 80 }, border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: H.border } } } },
+        { id: 'Heading3', name: 'Heading 3', basedOn: 'Normal', next: 'Normal',
           run: { bold: true, size: 22, color: H.navy, font: 'Calibri' },
-          paragraph: { spacing: { before: 180, after: 60 } },
-        },
-        {
-          id: 'Heading4', name: 'Heading 4', basedOn: 'Normal', next: 'Normal',
+          paragraph: { spacing: { before: 180, after: 60 } } },
+        { id: 'Heading4', name: 'Heading 4', basedOn: 'Normal', next: 'Normal',
           run: { bold: true, size: 20, color: H.gray, font: 'Calibri' },
-          paragraph: { spacing: { before: 120, after: 40 } },
-        },
+          paragraph: { spacing: { before: 120, after: 40 } } },
       ],
     },
     sections: [{
