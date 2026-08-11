@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf'
 import {
   Document, Packer, Paragraph, TextRun, ImageRun,
   Table, TableRow, TableCell, WidthType, BorderStyle,
-  ShadingType, convertInchesToTwip,
+  ShadingType, convertInchesToTwip, AlignmentType,
 } from 'docx'
 
 // ── Palette (identique à index.css) ──────────────────────────────────────────
@@ -47,7 +47,6 @@ const clean = (s: string | null | undefined) =>
 function loadImage(src: string): Promise<{ dataUrl: string; width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const img = new Image()
-
     img.onload = () => {
       if (src.startsWith('data:')) {
         resolve({ dataUrl: src, width: img.naturalWidth, height: img.naturalHeight })
@@ -64,7 +63,6 @@ function loadImage(src: string): Promise<{ dataUrl: string; width: number; heigh
         }
       }
     }
-
     img.onerror = () => reject(new Error(`Impossible de charger l'image: ${src}`))
     img.crossOrigin = 'anonymous'
     img.src = src
@@ -77,20 +75,13 @@ async function extractBlocks(root: HTMLElement): Promise<Block[]> {
   const walk = async (node: Element) => {
     for (const child of Array.from(node.children)) {
       const tag = child.tagName.toLowerCase()
-
       if (tag === 'button' || tag === 'svg' || tag === 'path' || tag === 'script' || tag === 'style') continue
 
-      // CORRECTIF : classes EXACTES (après split sur les espaces), jamais des
-      // sous-chaînes. L'ancien code (classList.includes('hidden')) matchait
-      // aussi "overflow-hidden", "sm:hidden", etc. — des classes Tailwind très
-      // courantes, sans rapport avec un masquage permanent du contenu — ce qui
-      // excluait silencieusement des sections entières de l'export.
       const classes = (child.className || '').toString().trim().split(/\s+/)
       const id = child.id || ''
       const isExcluded =
         classes.some(c => c === 'fixed' || c === 'absolute' || c === 'hidden' || c === 'sidebar') ||
         id.includes('nav') || id.includes('menu')
-
       if (isExcluded) continue
 
       if (/^h[1-4]$/.test(tag)) {
@@ -167,8 +158,11 @@ const REC_CONTACTS = [
 const triggerDownload = (blob: Blob, filename: string) => {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = url; a.download = filename
-  document.body.appendChild(a); a.click(); a.remove()
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
   URL.revokeObjectURL(url)
 }
 
@@ -177,12 +171,11 @@ const slug = (s: string) =>
     .replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// PDF — Reproduction fidèle du design HTML
+// PDF
 // ═══════════════════════════════════════════════════════════════════════════════
 export async function exportPDF(root: HTMLElement, title: string) {
   const blocks = await extractBlocks(root)
   const doc = new jsPDF({ unit: 'pt', format: 'a4', compress: true })
-
   const MX = 40, MT = 60, MB = 50
   const PW = doc.internal.pageSize.getWidth()
   const PH = doc.internal.pageSize.getHeight()
@@ -205,61 +198,83 @@ export async function exportPDF(root: HTMLElement, title: string) {
     doc.setTextColor(color[0], color[1], color[2])
     const lh = size * 1.45
     const lines: string[] = doc.splitTextToSize(text, CW - indent)
-    for (const ln of lines) { fit(lh); doc.text(ln, MX + indent, y); y += lh }
+    for (const ln of lines) {
+      fit(lh)
+      doc.text(ln, MX + indent, y)
+      y += lh
+    }
     y += gap
   }
 
+  // Header
   doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
   doc.rect(0, 0, PW, 88, 'F')
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(24); doc.setTextColor(255, 255, 255)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(24)
+  doc.setTextColor(255, 255, 255)
   doc.text(title, MX, 50)
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(255, 200, 195)
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(9)
+  doc.setTextColor(255, 200, 195)
   doc.text('KALATI RAG — Documentation technique · CAMRAIL', MX, 70)
   y = 108
 
   for (let i = 0; i < blocks.length; i++) {
     const b = blocks[i]
-
     switch (b.type) {
       case 'heading': {
         if (b.level === 1) {
-          y += 12; fit(40)
+          y += 12
+          fit(40)
           doc.setFillColor(R.surface[0], R.surface[1], R.surface[2])
           doc.rect(MX, y - 12, CW, 28, 'F')
           doc.setFillColor(R.brand[0], R.brand[1], R.brand[2])
           doc.rect(MX, y - 12, 4, 28, 'F')
-          doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(R.brand[0], R.brand[1], R.brand[2])
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(16)
+          doc.setTextColor(R.brand[0], R.brand[1], R.brand[2])
           doc.text(b.text, MX + 10, y + 5)
           y += 20
         } else if (b.level === 2) {
-          y += 8; fit(22)
-          doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(R.navy[0], R.navy[1], R.navy[2])
+          y += 8
+          fit(22)
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(12)
+          doc.setTextColor(R.navy[0], R.navy[1], R.navy[2])
           doc.text(b.text, MX, y)
           y += 12
           doc.setDrawColor(R.border[0], R.border[1], R.border[2])
-          doc.setLineWidth(0.4); doc.line(MX, y, MX + CW, y); y += 6
+          doc.setLineWidth(0.4)
+          doc.line(MX, y, MX + CW, y)
+          y += 6
         } else if (b.level === 3) {
-          y += 4; fit(16)
-          doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(R.navy[0], R.navy[1], R.navy[2])
+          y += 4
+          fit(16)
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(11)
+          doc.setTextColor(R.navy[0], R.navy[1], R.navy[2])
           doc.text(b.text, MX, y)
           y += 10
         } else {
-          y += 2; fit(12)
-          doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
+          y += 2
+          fit(12)
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(10)
+          doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
           doc.text(b.text, MX, y)
           y += 8
         }
         break
       }
-
       case 'paragraph': {
         write(b.text, 10, false, R.body, 0, 8)
         break
       }
-
       case 'bullet': {
         fit(16)
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(R.body[0], R.body[1], R.body[2])
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(10)
+        doc.setTextColor(R.body[0], R.body[1], R.body[2])
         const lines: string[] = doc.splitTextToSize(b.text, CW - 10)
         let isFirst = true
         for (const ln of lines) {
@@ -274,12 +289,13 @@ export async function exportPDF(root: HTMLElement, title: string) {
         y += 2
         break
       }
-
       case 'code': {
         y += 4
         const cLines = b.text.split('\n')
         const cLH = 8
-        doc.setFont('courier', 'normal'); doc.setFontSize(8); doc.setTextColor(R.body[0], R.body[1], R.body[2])
+        doc.setFont('courier', 'normal')
+        doc.setFontSize(8)
+        doc.setTextColor(R.body[0], R.body[1], R.body[2])
         for (const ln of cLines) {
           fit(cLH)
           doc.text(ln, MX + 5, y)
@@ -288,7 +304,6 @@ export async function exportPDF(root: HTMLElement, title: string) {
         y += 6
         break
       }
-
       case 'table': {
         y += 4
         const colCount = b.headers.length || b.rows[0]?.length || 1
@@ -308,7 +323,9 @@ export async function exportPDF(root: HTMLElement, title: string) {
             const cx = MX + ci * colW
             doc.setFillColor(R.border[0], R.border[1], R.border[2])
             doc.rect(cx, y, colW, rh, 'F')
-            doc.setFont('helvetica', 'bold'); doc.setFontSize(FSIZE); doc.setTextColor(R.body[0], R.body[1], R.body[2])
+            doc.setFont('helvetica', 'bold')
+            doc.setFontSize(FSIZE)
+            doc.setTextColor(R.body[0], R.body[1], R.body[2])
             const lines = doc.splitTextToSize(b.headers[ci] || '', colW - PADX * 2)
             let ty = y + PADY + FSIZE * 0.8
             for (const ln of lines) {
@@ -316,7 +333,8 @@ export async function exportPDF(root: HTMLElement, title: string) {
               ty += LH
             }
             doc.setDrawColor(R.border[0], R.border[1], R.border[2])
-            doc.setLineWidth(0.2); doc.rect(cx, y, colW, rh, 'S')
+            doc.setLineWidth(0.2)
+            doc.rect(cx, y, colW, rh, 'S')
           }
           y += rh
         }
@@ -330,7 +348,9 @@ export async function exportPDF(root: HTMLElement, title: string) {
               doc.setFillColor(R.stripe[0], R.stripe[1], R.stripe[2])
               doc.rect(cx, y, colW, rh, 'F')
             }
-            doc.setFont('helvetica', 'normal'); doc.setFontSize(FSIZE); doc.setTextColor(R.body[0], R.body[1], R.body[2])
+            doc.setFont('helvetica', 'normal')
+            doc.setFontSize(FSIZE)
+            doc.setTextColor(R.body[0], R.body[1], R.body[2])
             const lines = doc.splitTextToSize(row[ci] || '', colW - PADX * 2)
             let ty = y + PADY + FSIZE * 0.8
             for (const ln of lines) {
@@ -338,14 +358,14 @@ export async function exportPDF(root: HTMLElement, title: string) {
               ty += LH
             }
             doc.setDrawColor(R.border[0], R.border[1], R.border[2])
-            doc.setLineWidth(0.2); doc.rect(cx, y, colW, rh, 'S')
+            doc.setLineWidth(0.2)
+            doc.rect(cx, y, colW, rh, 'S')
           }
           y += rh
         })
         y += 6
         break
       }
-
       case 'image': {
         y += 6
         const ratio = b.height / b.width
@@ -353,16 +373,16 @@ export async function exportPDF(root: HTMLElement, title: string) {
         if (Math.abs(ratio - 1) < 0.15) imgW = CW * 0.5
         else if (ratio > 1.3) imgW = CW * 0.4
         else if (ratio < 0.7) imgW = CW * 0.85
-
         const imgH = imgW * ratio
         fit(imgH + 15)
         const xPos = MX + (CW - imgW) / 2
-
         try {
           doc.addImage(b.src, 'PNG', xPos, y, imgW, imgH)
           y += imgH + 6
           if (b.caption) {
-            doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
+            doc.setFont('helvetica', 'italic')
+            doc.setFontSize(8)
+            doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
             const lines = doc.splitTextToSize(b.caption, imgW)
             for (const ln of lines) {
               doc.text(ln, xPos, y)
@@ -375,7 +395,6 @@ export async function exportPDF(root: HTMLElement, title: string) {
         y += 4
         break
       }
-
       case 'separator': {
         y += 4
         fit(8)
@@ -388,44 +407,44 @@ export async function exportPDF(root: HTMLElement, title: string) {
     }
   }
 
-  y += 12; fit(180)
+  // Section stage
+  y += 12
+  fit(180)
   doc.setFillColor(R.navy[0], R.navy[1], R.navy[2])
   doc.rect(MX, y, CW, 26, 'F')
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(255, 255, 255)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(11)
+  doc.setTextColor(255, 255, 255)
   doc.text(REC_TITLE, MX + 10, y + 16)
   y += 32
-
   write("Contexte et motivation", 10, true, R.navy, 0, 4)
   write(REC_INTRO, 9, false, R.body, 0, 8)
-
   write("Proposition de stage", 10, true, R.navy, 0, 4)
   write(REC_BODY, 9, false, R.body, 0, 10)
-
   write("Coordonnées de contact", 10, true, R.navy, 0, 4)
   for (const line of REC_CONTACTS) {
     write(line, 9, false, R.body, 10, 3)
   }
 
+  // Footer
   const total = doc.getNumberOfPages()
   for (let p = 1; p <= total; p++) {
     doc.setPage(p)
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(R.gray[0], R.gray[1], R.gray[2])
     doc.text(`KALATI RAG — ${title}  ·  Page ${p} / ${total}`, PW / 2, PH - 20, { align: 'center' })
     doc.setDrawColor(R.border[0], R.border[1], R.border[2])
-    doc.setLineWidth(0.3); doc.line(MX, PH - 30, PW - MX, PH - 30)
+    doc.setLineWidth(0.3)
+    doc.line(MX, PH - 30, PW - MX, PH - 30)
   }
 
   doc.save(`${slug(title)}.pdf`)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// DOCX — Reconstruit à partir des mêmes blocs que le PDF (extractBlocks).
-// CORRECTIF : l'ancienne version capturait une image via html2canvas mais ne
-// l'insérait JAMAIS dans le document — seul un texte placeholder était ajouté.
-// Cette version construit le document Word avec le contenu réel (titres,
-// paragraphes, listes, tableaux, images, séparateurs), comme le fait le PDF.
+// DOCX
 // ═══════════════════════════════════════════════════════════════════════════════
-
 const CELL_BORDERS = {
   top:    { style: BorderStyle.SINGLE, size: 4, color: H.border },
   bottom: { style: BorderStyle.SINGLE, size: 4, color: H.border },
@@ -453,13 +472,12 @@ function docxBadge(text: string, color: BadgeColor): TextRun {
 
 function docxCard(variant: 'info' | 'warning' | 'success' | 'error', title: string | undefined, content: string): Paragraph {
   const colors: Record<string, { bg: string; border: string; text: string }> = {
-    info: { bg: 'DBEAFE', border: '3B82F6', text: '1F2937' },
+    info:    { bg: 'DBEAFE', border: '3B82F6', text: '1F2937' },
     warning: { bg: 'FEF3C7', border: 'F59E0B', text: '1F2937' },
     success: { bg: 'D1FAE5', border: '10B981', text: '1F2937' },
-    error: { bg: 'FEE2E2', border: 'EF4444', text: '1F2937' },
+    error:   { bg: 'FEE2E2', border: 'EF4444', text: '1F2937' },
   }
   const cfg = colors[variant]
-
   return new Paragraph({
     children: [new TextRun({
       text: title ? `${title}: ${content}` : content,
@@ -530,17 +548,24 @@ function docxTable(headers: string[], rows: string[][]): Table {
   })
 }
 
+/** ✅ Fonction corrigée */
 async function docxImage(src: string, alt: string, maxWidthPx = 560): Promise<Paragraph | null> {
   try {
-    const base64 = src.split(',')[1]
+    const base64 = src.includes(',') ? src.split(',')[1] : src
     if (!base64) return null
+
     const binary = atob(base64)
     const bytes = new Uint8Array(binary.length)
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i)
+    }
 
     const dims = await new Promise<{ w: number; h: number }>((resolve) => {
       const img = new Image()
-      img.onload = () => resolve({ w: img.naturalWidth || maxWidthPx, h: img.naturalHeight || maxWidthPx })
+      img.onload = () => resolve({
+        w: img.naturalWidth || maxWidthPx,
+        h: img.naturalHeight || maxWidthPx,
+      })
       img.onerror = () => resolve({ w: maxWidthPx, h: maxWidthPx })
       img.src = src
     })
@@ -550,9 +575,15 @@ async function docxImage(src: string, alt: string, maxWidthPx = 560): Promise<Pa
     const height = Math.round(width * ratio)
 
     return new Paragraph({
-      children: [new ImageRun({ data: bytes, transformation: { width, height } })],
+      children: [
+        new ImageRun({
+          type: 'png', // ← CORRECTION PRINCIPALE
+          data: bytes,
+          transformation: { width, height },
+        }),
+      ],
       spacing: { after: 160 },
-      alignment: 'center' as any,
+      alignment: AlignmentType.CENTER,
     })
   } catch (e) {
     console.error('[export] image ignorée dans le DOCX:', alt, e)
@@ -598,9 +629,9 @@ export async function exportDOCX(root: HTMLElement, title: string) {
         if (p) ch.push(p)
         if (b.caption) {
           ch.push(new Paragraph({
-            children: [new TextRun({ text: b.caption, italic: true, size: 16, color: H.gray })],
+            children: [new TextRun({ text: b.caption, italics: true, size: 16, color: H.gray })],
             spacing: { after: 200 },
-            alignment: 'center' as any,
+            alignment: AlignmentType.CENTER,
           }))
         }
         break
@@ -618,6 +649,7 @@ export async function exportDOCX(root: HTMLElement, title: string) {
     }
   }
 
+  // Section stage
   ch.push(
     new Paragraph({ text: '', spacing: { before: 600, after: 0 } }),
     new Paragraph({
@@ -646,6 +678,7 @@ export async function exportDOCX(root: HTMLElement, title: string) {
       spacing: { before: 120, after: 120 },
     }),
   )
+
   for (const ln of REC_CONTACTS) {
     ch.push(new Paragraph({
       children: [new TextRun({ text: ln, size: 20, font: 'Calibri', color: H.body })],
@@ -658,22 +691,39 @@ export async function exportDOCX(root: HTMLElement, title: string) {
     styles: {
       default: { document: { run: { font: 'Calibri', size: 20, color: H.body } } },
       paragraphStyles: [
-        { id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal',
+        {
+          id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal',
           run: { bold: true, size: 32, color: H.brand, font: 'Calibri' },
-          paragraph: { spacing: { before: 400, after: 140 }, border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: H.brand } } } },
-        { id: 'Heading2', name: 'Heading 2', basedOn: 'Normal', next: 'Normal',
+          paragraph: { spacing: { before: 400, after: 140 }, border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: H.brand } } },
+        },
+        {
+          id: 'Heading2', name: 'Heading 2', basedOn: 'Normal', next: 'Normal',
           run: { bold: true, size: 26, color: H.navy, font: 'Calibri' },
-          paragraph: { spacing: { before: 280, after: 80 }, border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: H.border } } } },
-        { id: 'Heading3', name: 'Heading 3', basedOn: 'Normal', next: 'Normal',
+          paragraph: { spacing: { before: 280, after: 80 }, border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: H.border } } },
+        },
+        {
+          id: 'Heading3', name: 'Heading 3', basedOn: 'Normal', next: 'Normal',
           run: { bold: true, size: 22, color: H.navy, font: 'Calibri' },
-          paragraph: { spacing: { before: 180, after: 60 } } },
-        { id: 'Heading4', name: 'Heading 4', basedOn: 'Normal', next: 'Normal',
+          paragraph: { spacing: { before: 180, after: 60 } },
+        },
+        {
+          id: 'Heading4', name: 'Heading 4', basedOn: 'Normal', next: 'Normal',
           run: { bold: true, size: 20, color: H.gray, font: 'Calibri' },
-          paragraph: { spacing: { before: 120, after: 40 } } },
+          paragraph: { spacing: { before: 120, after: 40 } },
+        },
       ],
     },
     sections: [{
-      properties: { page: { margin: { top: convertInchesToTwip(1), bottom: convertInchesToTwip(1), left: convertInchesToTwip(1), right: convertInchesToTwip(1) } } },
+      properties: {
+        page: {
+          margin: {
+            top: convertInchesToTwip(1),
+            bottom: convertInchesToTwip(1),
+            left: convertInchesToTwip(1),
+            right: convertInchesToTwip(1),
+          },
+        },
+      },
       children: ch,
     }],
   })
