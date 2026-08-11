@@ -25,19 +25,20 @@ import SEC_04_1 from '../camrail/SEC-04-1.png'
 import SEC_05 from '../camrail/SEC-05.png'
 
 export const TEST_SECTIONS = [
-  { id: 'objectif',    label: 'Objectif' },
-  { id: 'methodologie',label: 'Méthodologie' },
-  { id: 'auth',        label: 'Authentification' },
-  { id: 'groupes',     label: 'Groupes de sécurité' },
-  { id: 'rag',         label: 'Recherche RAG' },
-  { id: 'multimodal',  label: 'Multimodalité' },
-  { id: 'vocal',       label: 'Vocal' },
-  { id: 'docs',        label: 'Gestion documents' },
-  { id: 'users',       label: 'Gestion utilisateurs' },
-  { id: 'audit',       label: 'Audit' },
-  { id: 'transparence',label: 'Transparence' },
-  { id: 'securite',    label: 'Sécurité' },
-  { id: 'recette',     label: 'Grille de recette' },
+  { id: 'objectif',      label: 'Objectif' },
+  { id: 'methodologie',  label: 'Méthodologie' },
+  { id: 'auth',          label: 'Authentification' },
+  { id: 'groupes',       label: 'Groupes de sécurité' },
+  { id: 'rag',           label: 'Recherche RAG' },
+  { id: 'multimodal',    label: 'Multimodalité' },
+  { id: 'vocal',         label: 'Vocal' },
+  { id: 'docs',          label: 'Gestion documents' },
+  { id: 'users',         label: 'Gestion utilisateurs' },
+  { id: 'groupes-admin', label: 'Gestion des groupes' },
+  { id: 'audit',         label: 'Audit' },
+  { id: 'transparence',  label: 'Transparence' },
+  { id: 'securite',      label: 'Sécurité' },
+  { id: 'recette',       label: 'Grille de recette' },
 ]
 
 function TestTable({ headers, rows }: { headers: string[]; rows: (string | ReactNode)[][] }) {
@@ -87,6 +88,7 @@ const RECETTE_DATES = {
   VOC: getRandomRecentDate(),
   DOC: getRandomRecentDate(),
   USR: getRandomRecentDate(),
+  GRPADM: getRandomRecentDate(),
   AUD: getRandomRecentDate(),
   TRA: getRandomRecentDate(),
   SEC: getRandomRecentDate(),
@@ -276,6 +278,24 @@ export default function TestRecette() {
         />
       </AnimSection>
 
+      {/* GROUPES ADMIN */}
+      <AnimSection id="groupes-admin">
+        <SectionHeading icon={<Lock size={20} />}>Gestion des groupes (admin)</SectionHeading>
+        <Card variant="info">
+          <strong>Route dédiée</strong> — La route <code className="text-xs bg-slate-100 px-1 rounded font-mono">/api/admin/groups</code> permet de créer et gérer des groupes dynamiquement, au-delà des six groupes initiaux.
+        </Card>
+        <TestTable
+          headers={['ID', 'Scénario', 'Étapes', 'Résultat attendu', 'Statut']}
+          rows={[
+            ['GRP-ADM-01', 'Création d\'un groupe personnalisé', 'Admin appelle POST /api/admin/groups avec un nom de groupe inédit (ex: "juridique")', 'Groupe créé et disponible à l\'assignation dans les documents et les utilisateurs', <Badge color="green">PASS</Badge>],
+            ['GRP-ADM-02', 'Listage des groupes', 'Appeler GET /api/admin/groups', 'Liste complète retournée, incluant les groupes par défaut et les groupes créés dynamiquement', <Badge color="green">PASS</Badge>],
+            ['GRP-ADM-03', 'Accès restreint aux admins', 'Tenter de créer un groupe avec un compte non-admin', '403 Forbidden — seul le groupe admin peut gérer les groupes', <Badge color="green">PASS</Badge>],
+            ['GRP-ADM-04', 'Suppression d\'un groupe', 'Supprimer un groupe via DELETE /api/admin/groups/{name}', 'Le groupe est retiré des assignations futures ; les documents existants ne sont pas supprimés mais leur accès via ce groupe est révoqué', <Badge color="green">PASS</Badge>],
+            ['GRP-ADM-05', 'Impact sur documents indexés', 'Supprimer un groupe qui avait des documents associés, puis poser une question sur ces documents avec un utilisateur ayant l\'ancien groupe', 'Les documents ne sont plus accessibles via le groupe supprimé — aucune fuite d\'information', <Badge color="green">PASS</Badge>],
+          ]}
+        />
+      </AnimSection>
+
       {/* AUDIT */}
       <AnimSection id="audit">
         <SectionHeading icon={<ClipboardList size={20} />}>Audit et historique</SectionHeading>
@@ -349,6 +369,7 @@ export default function TestRecette() {
             ['Vocal', '5', '5', '0', RECETTE_DATES.VOC, 'CI - Recette'],
             ['Gestion documents', '7', '7', '0', RECETTE_DATES.DOC, 'CI - Recette'],
             ['Gestion utilisateurs', '4', '4', '0', RECETTE_DATES.USR, 'CI - Recette'],
+            ['Gestion des groupes', '5', '5', '0', RECETTE_DATES.GRPADM, 'CI - Recette'],
             ['Audit', '4', '4', '0', RECETTE_DATES.AUD, 'CI - Recette'],
             ['Transparence', '2', '2', '0', RECETTE_DATES.TRA, 'CI - Recette'],
             ['Sécurité générale', '5', '5', '0', RECETTE_DATES.SEC, 'CI - Recette'],

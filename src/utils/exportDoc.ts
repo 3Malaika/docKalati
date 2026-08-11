@@ -1,8 +1,7 @@
 import { jsPDF } from 'jspdf'
 import {
   Document, Packer, Paragraph, TextRun, ImageRun,
-  Table, TableRow, TableCell, WidthType, BorderStyle,
-  ShadingType, convertInchesToTwip, AlignmentType,
+  BorderStyle, convertInchesToTwip, AlignmentType,
 } from 'docx'
 
 // ── Palette (identique à index.css) ──────────────────────────────────────────
@@ -445,152 +444,6 @@ export async function exportPDF(root: HTMLElement, title: string) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // DOCX
 // ═══════════════════════════════════════════════════════════════════════════════
-const CELL_BORDERS = {
-  top:    { style: BorderStyle.SINGLE, size: 4, color: H.border },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: H.border },
-  left:   { style: BorderStyle.SINGLE, size: 4, color: H.border },
-  right:  { style: BorderStyle.SINGLE, size: 4, color: H.border },
-}
-
-const BADGE_COLORS: Record<BadgeColor, string> = {
-  red: 'E63329',
-  green: '10B981',
-  blue: '3B82F6',
-  yellow: 'F59E0B',
-  gray: '6B7A8D',
-}
-
-function docxBadge(text: string, color: BadgeColor): TextRun {
-  return new TextRun({
-    text: ` ${text} `,
-    bold: true,
-    size: 16,
-    color: 'FFFFFF',
-    shading: { type: ShadingType.SOLID, fill: BADGE_COLORS[color], color: BADGE_COLORS[color] },
-  })
-}
-
-function docxCard(variant: 'info' | 'warning' | 'success' | 'error', title: string | undefined, content: string): Paragraph {
-  const colors: Record<string, { bg: string; border: string; text: string }> = {
-    info:    { bg: 'DBEAFE', border: '3B82F6', text: '1F2937' },
-    warning: { bg: 'FEF3C7', border: 'F59E0B', text: '1F2937' },
-    success: { bg: 'D1FAE5', border: '10B981', text: '1F2937' },
-    error:   { bg: 'FEE2E2', border: 'EF4444', text: '1F2937' },
-  }
-  const cfg = colors[variant]
-  return new Paragraph({
-    children: [new TextRun({
-      text: title ? `${title}: ${content}` : content,
-      size: 20,
-      color: cfg.text,
-    })],
-    shading: { type: ShadingType.SOLID, fill: cfg.bg, color: cfg.bg },
-    border: { left: { style: BorderStyle.SINGLE, size: 24, color: cfg.border } },
-    spacing: { before: 120, after: 120 },
-    indent: { left: convertInchesToTwip(0.15), right: convertInchesToTwip(0.15) },
-  })
-}
-
-function docxHeading(level: 1 | 2 | 3 | 4, text: string): Paragraph {
-  return new Paragraph({ style: `Heading${level}`, children: [new TextRun({ text })] })
-}
-
-function docxParagraph(text: string): Paragraph {
-  return new Paragraph({
-    children: [new TextRun({ text, size: 20, font: 'Calibri', color: H.body })],
-    spacing: { after: 160 },
-  })
-}
-
-function docxBullet(text: string): Paragraph {
-  return new Paragraph({
-    children: [new TextRun({ text, size: 20, font: 'Calibri', color: H.body })],
-    bullet: { level: 0 },
-    spacing: { after: 60 },
-  })
-}
-
-function docxCode(text: string): Paragraph[] {
-  return text.split('\n').map(line => new Paragraph({
-    children: [new TextRun({ text: line || ' ', font: 'Consolas', size: 18, color: H.codefg })],
-    shading: { type: ShadingType.SOLID, fill: H.codebg, color: H.codebg },
-    spacing: { after: 0 },
-  }))
-}
-
-function docxTable(headers: string[], rows: string[][]): Table {
-  const colCount = headers.length || rows[0]?.length || 1
-  const colWidth = Math.floor(9000 / colCount)
-
-  const headerRow = new TableRow({
-    children: headers.map(h => new TableCell({
-      width: { size: colWidth, type: WidthType.DXA },
-      shading: { type: ShadingType.SOLID, fill: H.border, color: H.border },
-      borders: CELL_BORDERS,
-      children: [new Paragraph({ children: [new TextRun({ text: h, bold: true, size: 18, color: H.body })] })],
-    })),
-  })
-
-  const bodyRows = rows.map((row, ri) => new TableRow({
-    children: row.map(cell => new TableCell({
-      width: { size: colWidth, type: WidthType.DXA },
-      shading: ri % 2 === 1
-        ? { type: ShadingType.SOLID, fill: H.stripe, color: H.stripe }
-        : undefined,
-      borders: CELL_BORDERS,
-      children: [new Paragraph({ children: [new TextRun({ text: cell, size: 18, color: H.body })] })],
-    })),
-  }))
-
-  return new Table({
-    width: { size: 9000, type: WidthType.DXA },
-    rows: headers.length ? [headerRow, ...bodyRows] : bodyRows,
-  })
-}
-
-/** ✅ Fonction corrigée */
-async function docxImage(src: string, alt: string, maxWidthPx = 560): Promise<Paragraph | null> {
-  try {
-    const base64 = src.includes(',') ? src.split(',')[1] : src
-    if (!base64) return null
-
-    const binary = atob(base64)
-    const bytes = new Uint8Array(binary.length)
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i)
-    }
-
-    const dims = await new Promise<{ w: number; h: number }>((resolve) => {
-      const img = new Image()
-      img.onload = () => resolve({
-        w: img.naturalWidth || maxWidthPx,
-        h: img.naturalHeight || maxWidthPx,
-      })
-      img.onerror = () => resolve({ w: maxWidthPx, h: maxWidthPx })
-      img.src = src
-    })
-
-    const ratio = dims.h / dims.w
-    const width = Math.min(maxWidthPx, dims.w)
-    const height = Math.round(width * ratio)
-
-    return new Paragraph({
-      children: [
-        new ImageRun({
-          type: 'png', // ← CORRECTION PRINCIPALE
-          data: bytes,
-          transformation: { width, height },
-        }),
-      ],
-      spacing: { after: 160 },
-      alignment: AlignmentType.CENTER,
-    })
-  } catch (e) {
-    console.error('[export] image ignorée dans le DOCX:', alt, e)
-    return null
-  }
-}
-
 export async function exportDOCX(root: HTMLElement, title: string) {
   // Dynamic import of html2canvas
   const html2canvas = (await import('html2canvas')).default
@@ -612,18 +465,12 @@ export async function exportDOCX(root: HTMLElement, title: string) {
   }
 
   // Calculate dimensions to fit on A4
-  // A4 is 210mm x 297mm, with 25mm margins = 160mm x 247mm usable
-  // 1mm ≈ 37.795 twips
+  // A4 with 1-inch margins = 6.5 inches usable width ≈ 560pt in Word
   const canvasW = canvas.width
   const canvasH = canvas.height
   const ratio = canvasH / canvasW
 
-  // Max width in pixels at scale 2 (accounting for 1-inch margins on each side)
-  const maxWidthPx = 560 * 2 // scaled
-  const imgW = Math.min(canvasW, maxWidthPx)
-  const imgH = imgW * ratio
-
-  type Child = Paragraph | Table
+  type Child = Paragraph
   const ch: Child[] = []
 
   ch.push(

@@ -87,20 +87,24 @@ export default function GuideTechnique() {
             <CodeBlock lang="tree" code={`kalati-rag/
 ├── backend/app/
 │   ├── main.py              # FastAPI entry
-│   ├── config.py            # Variables d'env
+│   ├── core/
+│   │   └── config.py        # Variables d'env
 │   ├── api/routes/
 │   │   ├── auth.py          # Login / JWT
 │   │   ├── query.py         # Pipeline RAG
 │   │   ├── admin.py         # Ingestion + audit
+│   │   ├── upload.py        # Upload documents
 │   │   ├── users.py         # Gestion users
+│   │   ├── groups.py        # Gestion groupes
+│   │   ├── system.py        # Health + config
 │   │   └── voice.py         # Transcription TTS
 │   ├── domain/
-│   │   ├── rag.py           # Orchestrateur RAG
-│   │   └── retrieval.py     # Recherche hybride
+│   │   ├── entities/        # Query, Document, User, AuditEntry
+│   │   ├── ports/           # Interfaces abstraites (VectorStorePort, LLMPort…)
+│   │   └── use_cases/       # RAGUseCase, IngestUseCase, AuthUseCase…
 │   └── infrastructure/
-│       ├── embeddings.py    # Cohere API
-│       ├── llm_client.py    # Groq LLM
-│       └── vector_store.py  # ChromaDB
+│       ├── adapters/        # ChromaDBAdapter, GroqAdapter, CohereAdapter…
+│       └── gateways/        # SQLiteAuditGateway, SQLiteUserGateway
 ├── frontend/src/app/
 │   ├── login/
 │   ├── chat-documentaire/
@@ -310,12 +314,15 @@ export default function GuideTechnique() {
             [<Badge color="green">GET</Badge>, <IC>/api/admin/documents</IC>, 'Admin', 'Liste des documents indexés'],
             [<Badge color="blue">POST</Badge>, <IC>/api/admin/upload</IC>, 'Admin', 'Upload + indexation automatique'],
             [<Badge color="red">DELETE</Badge>, <IC>/api/admin/documents/{'{filename}'}</IC>, 'Admin', 'Supprime un document'],
-            [<Badge color="orange">PATCH</Badge>, <IC>/api/admin/documents/{'{filename}'}/groups</IC>, 'Admin', 'Modifie les groupes d\'accès'],
+            [<Badge color="orange">PATCH</Badge>, <IC>/api/admin/documents/{'{filename}'}/groups</IC>, 'Admin', 'Modifie les groupes d\'accès d\'un document'],
             [<Badge color="blue">POST</Badge>, <IC>/api/admin/ingest</IC>, 'Admin', 'Ré-indexe tout le dossier documents'],
             [<Badge color="green">GET</Badge>, <IC>/api/admin/users</IC>, 'Admin', 'Liste des utilisateurs'],
             [<Badge color="blue">POST</Badge>, <IC>/api/admin/users</IC>, 'Admin', 'Créer un utilisateur'],
             [<Badge color="orange">PUT</Badge>, <IC>/api/admin/users/{'{username}'}</IC>, 'Admin', 'Modifier un utilisateur'],
             [<Badge color="red">DELETE</Badge>, <IC>/api/admin/users/{'{username}'}</IC>, 'Admin', 'Supprimer un utilisateur'],
+            [<Badge color="green">GET</Badge>, <IC>/api/admin/groups</IC>, 'Admin', 'Liste les groupes de sécurité existants'],
+            [<Badge color="blue">POST</Badge>, <IC>/api/admin/groups</IC>, 'Admin', 'Créer un nouveau groupe personnalisé'],
+            [<Badge color="red">DELETE</Badge>, <IC>/api/admin/groups/{'{name}'}</IC>, 'Admin', 'Supprimer un groupe (les documents associés restent, leur groupe est retiré)'],
             [<Badge color="green">GET</Badge>, <IC>/api/admin/audit/logs</IC>, 'Admin', 'Journal d\'audit'],
             [<Badge color="blue">POST</Badge>, <IC>/api/voice/transcribe</IC>, 'JWT', 'Transcription audio → texte'],
             [<Badge color="blue">POST</Badge>, <IC>/api/voice/query</IC>, 'JWT', 'Audio → RAG → réponse + audio'],

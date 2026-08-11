@@ -41,28 +41,34 @@ export default function RapportConception() {
       {/* ARCHITECTURE */}
       <AnimSection id="architecture">
         <SectionHeading icon={<LayoutGrid size={20} />}>Rappel de l'architecture générale</SectionHeading>
+        <p className="text-sm text-[#374151] leading-relaxed mb-4">
+          Le backend est structuré selon les principes de la <strong>Clean Architecture</strong>, organisée en quatre couches concentriques. Les dépendances ne vont que vers l'intérieur : l'Infrastructure dépend du Domain, jamais l'inverse.
+        </p>
         <Diagram>{`Utilisateur (web / tablette / mobile)
         │
         ▼
   Frontend (Next.js) ── authentification, chat, dashboard admin
         │  HTTPS + JWT Bearer
         ▼
-  Backend API (FastAPI) ── Clean Architecture (api / domain / infrastructure)
+  Backend API (FastAPI) ── 4 couches concentriques
         │
-        ├── domain/        logique métier pure (RAG, retrieval, auth)
+        ├── core/                 partagé par toutes les couches
+        │     └── config.py       variables d'environnement, constantes
         │
-        ├── infrastructure/ adaptateurs concrets
-        │     ├── vector_store.py     → ChromaDB (recherche sémantique)
-        │     ├── llm_client.py       → LLM (génération de réponse)
-        │     ├── vision_client.py    → modèle de vision
-        │     ├── voice_client.py     → transcription + synthèse vocale
-        │     ├── document_ingestion.py → lecture/découpage des documents
-        │     └── audit_repository.py / user_repository.py → SQLite
+        ├── domain/               logique métier pure — aucune dépendance externe
+        │     ├── entities/       Query, Document, User, AuditEntry
+        │     ├── ports/          interfaces abstraites (VectorStorePort, LLMPort…)
+        │     └── use_cases/      RAGUseCase, IngestUseCase, AuthUseCase…
         │
-        └── api/routes/   auth, query, admin, upload, voice, system`}</Diagram>
-        <p className="text-sm text-[#374151] leading-relaxed mb-4">
-          Ce découpage en couches permet de changer un composant technique (ex: passer d'un LLM local à un LLM cloud) sans modifier la logique métier.
-        </p>
+        ├── infrastructure/       implémentations concrètes des ports
+        │     ├── adapters/       ChromaDBAdapter, GroqAdapter, CohereAdapter…
+        │     └── gateways/       SQLiteAuditGateway, SQLiteUserGateway
+        │
+        └── api/routes/           couche HTTP uniquement
+              auth, query, admin, upload, users, groups, system, voice`}</Diagram>
+        <Card variant="info">
+          <strong>Principe ports / adaptateurs</strong> — Le Domain ne connaît jamais l'Infrastructure. Il définit uniquement des interfaces (ports) que l'Infrastructure implémente. Cela permet de remplacer ChromaDB par Pinecone, ou Groq par OpenAI, sans toucher à la logique métier.
+        </Card>
         <Card variant="warn">
           <strong>Deux configurations coexistent</strong>
           <DataTable
@@ -235,15 +241,22 @@ Enregistrement automatique dans le journal d'audit`}</Diagram>
       {/* MODÈLE DE DONNÉES */}
       <AnimSection id="modele">
         <SectionHeading icon={<Database size={20} />}>Modèle de données simplifié</SectionHeading>
+        <p className="text-sm text-[#374151] leading-relaxed mb-3">
+          Avec la Clean Architecture, les entités sont des objets du Domain, formalisés dans <code className="text-xs bg-slate-100 px-1 rounded font-mono">domain/entities/</code>. Une question utilisateur, autrefois un simple objet éphémère, est désormais une entité nommée <strong>Query</strong>.
+        </p>
         <DataTable
           headers={['Entité', 'Champs principaux', 'Stockage']}
           rows={[
-            ['Utilisateur', 'identifiant, nom complet, mot de passe (haché), groupes', 'SQLite'],
-            ['Document', 'nom de fichier, taille, groupes autorisés (manifeste)', 'Système de fichiers + fichier manifeste JSON'],
-            ['Fragment indexé (chunk)', 'texte, document d\'origine, type (texte/tableau/image), groupes autorisés, vecteur d\'embedding', 'Base vectorielle (ChromaDB)'],
-            ['Entrée d\'audit', 'horodatage, utilisateur, groupes, question, réponse, sources utilisées', 'SQLite'],
+            ['User', 'identifiant, nom complet, mot de passe (haché), groupes', 'SQLite via SQLiteUserGateway'],
+            ['Document', 'nom de fichier, taille, groupes autorisés (manifeste)', 'Système de fichiers + manifeste JSON'],
+            ['Query', 'texte de la question, identifiant utilisateur, groupes actifs, horodatage', 'Entité Domain — journalisée dans SQLite via AuditEntry'],
+            ['AuditEntry', 'horodatage, utilisateur, groupes, question, réponse, sources utilisées', 'SQLite via SQLiteAuditGateway'],
+            ['Fragment indexé (chunk)', 'texte, document d\'origine, type (texte/tableau/image), groupes autorisés, vecteur d\'embedding', 'Base vectorielle (ChromaDB) via ChromaDBAdapter'],
           ]}
         />
+        <Card variant="info">
+          <strong>Pourquoi formaliser Query en entité</strong> — Avant la restructuration, une question n'était qu'un objet éphémère passé entre fonctions. La formaliser en entité Domain permet de lui associer des règles métier (validation de longueur, détection de prompt injection) indépendamment du transport HTTP.
+        </Card>
       </AnimSection>
 
       {/* CHOIX TECHNIQUES */}
@@ -254,7 +267,8 @@ Enregistrement automatique dans le journal d'audit`}</Diagram>
           rows={[
             ['Recherche hybride (lexicale + sémantique)', 'La recherche sémantique seule peut manquer des termes exacts (numéros d\'article, sigles) ; la recherche lexicale seule ne comprend pas les reformulations.'],
             ['Filtrage par groupe avant génération', 'Un document non autorisé ne doit jamais être vu par le LLM — élimine tout risque de fuite via la réponse générée.'],
-            ['Architecture en couches (Clean Architecture)', 'Permet de faire évoluer les composants techniques sans réécrire la logique métier, et facilite les tests.'],
+            ['Clean Architecture en 4 couches (core / domain / infrastructure / api)', 'Permet de faire évoluer les composants techniques sans réécrire la logique métier, et facilite les tests unitaires du Domain en isolation totale.'],
+            ['Pattern Ports / Adaptateurs', 'Permet de remplacer ChromaDB par Pinecone, ou Groq par OpenAI, sans toucher à la logique métier — le Domain ne connaît jamais l\'Infrastructure.'],
             ['Authentification par token JWT', 'Standard robuste, sans état côté serveur, avec expiration automatique intégrée.'],
             ['Journalisation systématique', 'Répond directement à l\'exigence réglementaire de traçabilité du cahier des charges.'],
             ['Modèles auto-hébergés en production', 'Garantit qu\'aucune donnée normative CAMRAIL ne transite par un service tiers externe.'],
