@@ -164,7 +164,7 @@ export default function GuideTechnique() {
                 <li>• Git — <a href="https://git-scm.com" className="text-[#e63329] underline underline-offset-2">git-scm.com</a></li>
                 <li>• ffmpeg (optionnel, améliore la transcription vocale)</li>
               </ul>
-              <Step n={1} title="Cloner le repo"><CodeBlock code={`git clone https://github.com/votre-repo/kalati-rag.git\ncd kalati-rag`} /></Step>
+              <Step n={1} title="Cloner le repo"><CodeBlock code={`git clone github.com/3Malaika/kalati.git\ncd kalati`} /></Step>
               <Step n={2} title="Installer le backend"><CodeBlock code={`cd backend\npython -m venv venv\nvenv\\Scripts\\activate\npip install -r requirements.txt`} /></Step>
               <Step n={3} title="Configurer le backend (.env)">
                 <CodeBlock code={`copy .env.example .env`} />
@@ -186,7 +186,7 @@ export default function GuideTechnique() {
             <div>
               <H3>Prérequis Linux / macOS</H3>
               <CodeBlock lang="bash" code={`# Ubuntu / Debian\nsudo apt update && sudo apt install -y python3.11 python3.11-venv nodejs npm git ffmpeg\n\n# macOS (Homebrew)\nbrew install python@3.11 node git ffmpeg`} />
-              <Step n={1} title="Cloner le repo"><CodeBlock code={`git clone https://github.com/votre-repo/kalati-rag.git\ncd kalati-rag`} /></Step>
+              <Step n={1} title="Cloner le repo"><CodeBlock code={`git clone github.com/3Malaika/kalati.git\ncd kalati`} /></Step>
               <Step n={2} title="Installer le backend"><CodeBlock code={`cd backend\npython3.11 -m venv venv\nsource venv/bin/activate\npip install -r requirements.txt`} /></Step>
               <Step n={3} title="Configurer le backend"><CodeBlock code={`cp .env.example .env\nnano .env`} /><CodeBlock lang="env" code={`GROQ_API_KEY=votre_cle_groq\nCOHERE_API_KEY=votre_cle_cohere\nJWT_SECRET_KEY=une-cle-aleatoire-longue`} /></Step>
               <Step n={4} title="Démarrer le backend"><CodeBlock code={`source venv/bin/activate\nuvicorn app.main:app --reload --port 8000`} /></Step>

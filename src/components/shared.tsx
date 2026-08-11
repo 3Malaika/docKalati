@@ -140,7 +140,7 @@ export function DataTable({
     <div className="overflow-x-auto rounded-xl border border-[#d1d9e0] my-4 shadow-sm">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-[#0f1923] text-white">
+          <tr className="bg-brand text-white">
             {headers.map((h, i) => (
               <th key={i} className="text-left px-4 py-3 font-semibold">
                 {h}
@@ -263,5 +263,36 @@ export function ExampleBox({
       <p className="font-semibold text-[#0f1923] text-sm mb-1">{question}</p>
       <p className="text-xs text-[#6b7a8d]">{note}</p>
     </div>
+  )
+}
+
+// ─── Screenshot Block ────────────────────────────────────────────────────────
+export function ScreenshotBlock({
+  src,
+  alt,
+  caption,
+  width = 600,
+}: {
+  src: string
+  alt: string
+  caption?: string
+  width?: number
+}) {
+  return (
+    <figure className="my-6 text-center">
+      <div className="rounded-xl border border-[#d1d9e0] overflow-hidden shadow-sm bg-white inline-block">
+        <img
+          src={src}
+          alt={alt}
+          style={{ maxWidth: `${width}px`, width: '100%', height: 'auto' }}
+          className="block"
+        />
+      </div>
+      {caption && (
+        <figcaption className="text-xs text-[#6b7a8d] mt-2 italic">
+          {caption}
+        </figcaption>
+      )}
+    </figure>
   )
 }
